@@ -66,6 +66,6 @@ export const useTasksStore = create<TasksState>((set, get) => ({
       clearInterval(_timerInterval)
       _timerInterval = null
     }
-    set({ activeTimer: null })
+    set({ activeTimer: null, timerSeconds: 0 })
   },
 }))

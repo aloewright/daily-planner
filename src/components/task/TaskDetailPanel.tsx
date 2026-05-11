@@ -18,6 +18,7 @@ import {
   Paperclip,
   ChevronDown,
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useTasksStore } from '@/store/tasks'
 import { useTask } from '@/hooks/useTask'
 import { useQueryClient } from '@tanstack/react-query'
@@ -230,6 +231,9 @@ export function TaskDetailPanel() {
   const [savingTitle, setSavingTitle] = useState(false)
   const [isTimerRunning, setIsTimerRunning] = useState(false)
 
+  const [showChannelPicker, setShowChannelPicker] = useState(false)
+  const [channels, setChannels] = useState<ApiChannel[]>([])
+
   const titleInputRef = useRef<HTMLInputElement>(null)
   const commentInputRef = useRef<HTMLInputElement>(null)
   const newSubtaskRef = useRef<HTMLInputElement>(null)
@@ -272,10 +276,24 @@ export function TaskDetailPanel() {
     setIsTimerRunning(activeTimer === selectedTaskId)
   }, [activeTimer, selectedTaskId])
 
+  // ── Fetch channels once on mount ─────────────────────────────────────────
+  useEffect(() => {
+    fetch('/api/channels')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: ApiChannel[]) => setChannels(Array.isArray(data) ? data : []))
+      .catch(() => {/* silently ignore */})
+  }, [])
+
   // ── Keyboard close ───────────────────────────────────────────────────────
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') selectTask(null)
+      if (e.key === 'Escape') {
+        const active = document.activeElement
+        const isEditing = active instanceof HTMLInputElement ||
+                          active instanceof HTMLTextAreaElement ||
+                          active?.getAttribute('contenteditable') === 'true'
+        if (!isEditing) selectTask(null)
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -374,11 +392,16 @@ export function TaskDetailPanel() {
   // ── Delete subtask ────────────────────────────────────────────────────────
   async function handleDeleteSubtask(id: string) {
     try {
-      await fetch(`/api/subtasks/${id}`, { method: 'DELETE' })
+      const response = await fetch(`/api/subtasks/${id}`, { method: 'DELETE' })
+      if (!response.ok) {
+        toast.error('Failed to delete subtask')
+        return
+      }
       setSubtasks((prev) => prev.filter((s) => s.id !== id))
       queryClient.invalidateQueries({ queryKey: ['task', selectedTaskId] })
     } catch (err) {
       console.error('[deleteSubtask]', err)
+      toast.error('Failed to delete subtask')
     }
   }
 
@@ -447,12 +470,48 @@ export function TaskDetailPanel() {
           <>
             {/* ── HEADER ROW ─────────────────────────────────────────── */}
             <div className="flex items-center gap-1.5 px-4 pt-4 pb-2 flex-shrink-0 flex-wrap">
-              {/* Channel badge */}
-              <button className="flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 transition-colors">
-                <Hash size={10} />
-                {task.channel?.name ?? 'No channel'}
-                <ChevronDown size={10} className="text-amber-400/60" />
-              </button>
+              {/* Channel badge + picker */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowChannelPicker((prev) => !prev)}
+                  className="flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 transition-colors"
+                >
+                  <Hash size={10} />
+                  {task.channel?.name ?? 'No channel'}
+                  <ChevronDown size={10} className="text-amber-400/60" />
+                </button>
+
+                {showChannelPicker && (
+                  <div className="absolute top-full left-0 mt-1 z-50 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg shadow-xl overflow-hidden min-w-[140px]">
+                    {channels.map((ch) => (
+                      <button
+                        key={ch.id}
+                        onClick={() => {
+                          patchTask({ channelId: ch.id })
+                          setShowChannelPicker(false)
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-[11px] text-white/70 hover:bg-white/5 hover:text-white transition-colors text-left"
+                      >
+                        <span
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: ch.color }}
+                        />
+                        {ch.name}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => {
+                        patchTask({ channelId: null })
+                        setShowChannelPicker(false)
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-[11px] text-white/40 hover:bg-white/5 hover:text-white/60 transition-colors text-left border-t border-[#2a2a2a]"
+                    >
+                      <span className="w-2 h-2 rounded-full flex-shrink-0 bg-[#6b7280]" />
+                      No channel
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Location */}
               <button className="flex items-center gap-1 px-2 py-1 rounded text-[11px] text-white/40 hover:text-white/60 hover:bg-white/5 transition-colors">
