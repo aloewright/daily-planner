@@ -268,8 +268,9 @@ export function TaskDetailPanel() {
         editor.commands.setContent(task.notes || '')
       }
     }
+  // Include task to re-sync when subtasks/comments change after server updates
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [task?.id])
+  }, [task?.id, task?.subtasks?.length, task?.comments?.length])
 
   // Update timer running state
   useEffect(() => {
@@ -314,8 +315,8 @@ export function TaskDetailPanel() {
         // Sync zustand store
         updateTask(selectedTaskId, {
           title: updated.title,
-          estimatedMinutes: updated.plannedTime || undefined,
-          actualMinutes: updated.actualTime || undefined,
+          estimatedMinutes: updated.plannedTime ?? undefined,
+          actualMinutes: updated.actualTime ?? undefined,
         })
         // Invalidate react-query cache
         queryClient.invalidateQueries({ queryKey: ['task', selectedTaskId] })

@@ -19,10 +19,29 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const body = await request.json()
+    // Allowlist only known UserSettings fields to prevent overwriting protected columns
+    const {
+      timezone, timeFormat, startOfWeek, workStartTime, workEndTime,
+      dailyPlanningTime, weeklyPlanningDay, weeklyPlanningTime,
+      automatedDailyPlanning, automatedShutdown, endOfDayMessage,
+      countPlannedAsActual, autoSortTasks, aiChannelRecs, aiTimerRecs,
+      aiSummaries, onboardingCompleted,
+    } = body
+
+    const data = Object.fromEntries(
+      Object.entries({
+        timezone, timeFormat, startOfWeek, workStartTime, workEndTime,
+        dailyPlanningTime, weeklyPlanningDay, weeklyPlanningTime,
+        automatedDailyPlanning, automatedShutdown, endOfDayMessage,
+        countPlannedAsActual, autoSortTasks, aiChannelRecs, aiTimerRecs,
+        aiSummaries, onboardingCompleted,
+      }).filter(([, v]) => v !== undefined)
+    )
+
     const settings = await db.userSettings.upsert({
       where: { userId: DEMO_USER_ID },
-      update: body,
-      create: { userId: DEMO_USER_ID, ...body },
+      update: data,
+      create: { userId: DEMO_USER_ID, ...data },
     })
     return NextResponse.json(settings)
   } catch {
