@@ -1,0 +1,38 @@
+# Conductor config — daily-planner project
+# Run: cd /Users/aloe/Development/conductor && bun start /Users/aloe/Development/daily-planner/WORKFLOW.md
+
+linear:
+  project_id: "f5f47df8-7891-4ae5-92ca-a04ed0ad9bc2"
+  todo_states: ["Todo"]
+  in_progress_state: "In Progress"
+  review_state: "In Review"
+  done_state: "Done"
+
+repo:
+  url: "aloewright/daily-planner"
+  default_branch: "main"
+
+workspaces:
+  root: "~/code/daily-planner-workspaces"
+
+agent:
+  max_concurrent: 3
+  claude_args:
+    - "--print"
+    - "--dangerously-skip-permissions"
+    - "--model"
+    - "claude-opus-4-7"
+  timeout_ms: 1800000
+
+polling:
+  interval_ms: 30000
+
+review:
+  bot_quiet_ms: 600000
+  max_loop_ms: 7200000
+  human_authors:
+    - "aloewright"
+  merge_args: ["--squash", "--delete-branch", "--admin"]
+  poll_interval_ms: 30000
+
+label: "conductor"

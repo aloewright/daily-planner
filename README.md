@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Daily Planner
 
-## Getting Started
+A full-stack daily planner web app inspired by Sunsama — calendar-integrated task manager with daily/weekly planning rituals, time tracking, and productivity analytics. Dark theme only.
 
-First, run the development server:
+## Stack
+
+- **Frontend:** Next.js App Router · TypeScript · Tailwind CSS v4
+- **State:** Zustand (client) · TanStack Query (server)
+- **Database:** Prisma 7 · SQLite (dev) / PostgreSQL (prod)
+- **Auth:** Better Auth
+- **UI:** Tiptap (rich text) · @dnd-kit (drag & drop) · Recharts (charts) · Lucide React (icons)
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+bun install
+bunx prisma migrate dev
+bunx prisma db seed
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Running with Conductor
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Conductor automates Linear ticket implementation using Claude agents.
 
-## Learn More
+```bash
+# Requires: LINEAR_API_KEY env var, GitHub CLI authenticated
+cd /Users/aloe/Development/conductor
+bun start /Users/aloe/Development/daily-planner/WORKFLOW.md
+```
 
-To learn more about Next.js, take a look at the following resources:
+> **Note:** Linear workspace must have available issue slots.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Development
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+bun run build       # type-check + build
+bun run lint        # ESLint
+bunx prisma studio  # DB browser UI
+```
