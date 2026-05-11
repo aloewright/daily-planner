@@ -22,38 +22,51 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const tasks = await db.task.findMany({
-    where,
-    include: {
-      channel: true,
-      subtasks: true,
-      comments: true,
-    },
-    orderBy: [{ startDate: 'asc' }, { sortOrder: 'asc' }],
-  })
-
-  return NextResponse.json(tasks)
+  try {
+    const tasks = await db.task.findMany({
+      where,
+      include: {
+        channel: true,
+        subtasks: true,
+        comments: true,
+      },
+      orderBy: [{ startDate: 'asc' }, { sortOrder: 'asc' }],
+    })
+    return NextResponse.json(tasks)
+  } catch (error) {
+    console.error('[GET /api/tasks]', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json()
-  const { title, startDate, channelId, plannedTime, scheduledTime } = body
+  try {
+    const body = await request.json()
+    const { title, startDate, channelId, plannedTime, scheduledTime } = body
 
-  const task = await db.task.create({
-    data: {
-      title,
-      userId: DEMO_USER_ID,
-      startDate: startDate ? new Date(startDate) : null,
-      channelId: channelId ?? null,
-      plannedTime: plannedTime ?? 0,
-      scheduledTime: scheduledTime ?? null,
-    },
-    include: {
-      channel: true,
-      subtasks: true,
-      comments: true,
-    },
-  })
+    if (!title?.trim()) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+    }
 
-  return NextResponse.json(task, { status: 201 })
+    const task = await db.task.create({
+      data: {
+        title: title.trim(),
+        userId: DEMO_USER_ID,
+        startDate: startDate ? new Date(startDate) : null,
+        channelId: channelId ?? null,
+        plannedTime: plannedTime ?? 0,
+        scheduledTime: scheduledTime ?? null,
+      },
+      include: {
+        channel: true,
+        subtasks: true,
+        comments: true,
+      },
+    })
+
+    return NextResponse.json(task, { status: 201 })
+  } catch (error) {
+    console.error('[POST /api/tasks]', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
