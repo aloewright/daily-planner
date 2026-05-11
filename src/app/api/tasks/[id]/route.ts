@@ -41,6 +41,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     scheduledTime,
     notes,
     sortOrder,
+    backlogStatus,
   } = body
 
   const data: Record<string, unknown> = {}
@@ -55,6 +56,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   if (scheduledTime !== undefined) data.scheduledTime = scheduledTime
   if (notes !== undefined) data.notes = notes
   if (sortOrder !== undefined) data.sortOrder = sortOrder
+  if (backlogStatus !== undefined) data.backlogStatus = backlogStatus
 
   const task = await db.task.update({
     where: { id },

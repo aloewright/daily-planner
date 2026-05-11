@@ -10,9 +10,17 @@ export async function GET(request: NextRequest) {
   // userId param accepted but we use demo user for now
   // const userId = searchParams.get('userId') ?? DEMO_USER_ID
 
+  const backlogStatus = searchParams.get('backlogStatus')
+
   const where: Record<string, unknown> = {
     userId: DEMO_USER_ID,
     archived: false,
+  }
+
+  if (backlogStatus === 'all') {
+    where.backlogStatus = { not: null }
+  } else if (backlogStatus) {
+    where.backlogStatus = backlogStatus
   }
 
   if (startDate && endDate) {
@@ -42,7 +50,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, startDate, channelId, plannedTime, scheduledTime } = body
+    const { title, startDate, channelId, plannedTime, scheduledTime, backlogStatus } = body
 
     if (!title?.trim()) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
@@ -56,6 +64,7 @@ export async function POST(request: NextRequest) {
         channelId: channelId ?? null,
         plannedTime: plannedTime ?? 0,
         scheduledTime: scheduledTime ?? null,
+        backlogStatus: backlogStatus ?? null,
       },
       include: {
         channel: true,
