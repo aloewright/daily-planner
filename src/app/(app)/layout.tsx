@@ -1,6 +1,7 @@
 import { LeftSidebar } from '@/components/layout/LeftSidebar'
 import { RightIconStrip } from '@/components/layout/RightIconStrip'
 import { TopBar } from '@/components/layout/TopBar'
+import { TaskDetailPanel } from '@/components/task/TaskDetailPanel'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <RightIconStrip />
+      <TaskDetailPanel />
     </div>
   )
 }
