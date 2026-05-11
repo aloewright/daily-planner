@@ -23,6 +23,10 @@ export async function GET(request: NextRequest) {
     where.backlogStatus = backlogStatus
   }
 
+  const completed = searchParams.get('completed')
+  if (completed === 'true') where.completed = true
+  else if (completed === 'false') where.completed = false
+
   if (startDate && endDate) {
     where.startDate = {
       gte: new Date(startDate),

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Plus, ArrowUpDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { TaskCard } from './TaskCard'
@@ -17,16 +17,28 @@ interface DayColumnProps {
   date: Date
   tasks: Task[]
   isToday: boolean
+  isLoading?: boolean
   onAddTask: (title: string, date: Date) => Promise<void>
   onCompleteToggle: (task: Task) => void
 }
 
-export function DayColumn({ date, tasks, isToday, onAddTask, onCompleteToggle }: DayColumnProps) {
+export function DayColumn({ date, tasks, isToday, isLoading = false, onAddTask, onCompleteToggle }: DayColumnProps) {
   const [showInput, setShowInput] = useState(false)
   const [inputValue, setInputValue] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const addTask = useTasksStore((s) => s.addTask)
+
+  // Listen for the 'add-task' keyboard shortcut event — only trigger for today's column
+  useEffect(() => {
+    if (!isToday) return
+    function handleAddTaskEvent() {
+      setShowInput(true)
+      setTimeout(() => inputRef.current?.focus(), 0)
+    }
+    document.addEventListener('add-task', handleAddTaskEvent)
+    return () => document.removeEventListener('add-task', handleAddTaskEvent)
+  }, [isToday])
 
   const completedCount = tasks.filter((t) => t.status === 'done').length
   const totalCount = tasks.length
@@ -127,18 +139,29 @@ export function DayColumn({ date, tasks, isToday, onAddTask, onCompleteToggle }:
 
       {/* Task list */}
       <div className="flex flex-col gap-2 flex-1">
-        {tasks.length === 0 && !showInput && (
-          <div className="flex items-center justify-center py-8">
-            <span className="text-xs text-white/15">No tasks</span>
+        {isLoading ? (
+          <>
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-20 animate-pulse bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg"
+              />
+            ))}
+          </>
+        ) : tasks.length === 0 && !showInput ? (
+          <div className="border border-dashed border-[#2a2a2a] rounded-lg py-6 flex flex-col items-center justify-center gap-1">
+            <span className="text-xs text-white/20">No tasks planned.</span>
+            {isToday && <span className="text-[10px] text-white/12">Press A to add one.</span>}
           </div>
+        ) : (
+          tasks.map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onCompleteToggle={onCompleteToggle}
+            />
+          ))
         )}
-        {tasks.map((task) => (
-          <TaskCard
-            key={task.id}
-            task={task}
-            onCompleteToggle={onCompleteToggle}
-          />
-        ))}
       </div>
     </div>
   )
