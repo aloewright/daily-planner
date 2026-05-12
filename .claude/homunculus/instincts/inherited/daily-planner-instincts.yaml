@@ -1,0 +1,611 @@
+# Instincts generated from https://github.com/aloewright/daily-planner
+# Generated: 2026-05-12T00:38:15.260Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: daily-planner-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/aloewright/daily-planner
+---
+
+# Daily Planner Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: feat, fix, chore
+
+## Evidence
+
+- 15 commits analyzed
+- Detected conventional commit pattern
+- Examples: feat(scaffold): initial Next.js daily planner project setup, chore: add conductor config, workflow template, and README
+
+---
+id: daily-planner-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/aloewright/daily-planner
+---
+
+# Daily Planner Commit Length
+
+## Action
+
+Write moderate-length commit messages (~72 characters)
+
+## Evidence
+
+- Average commit message length: 72 chars
+- Based on 15 commits
+
+---
+id: daily-planner-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/aloewright/daily-planner
+---
+
+# Daily Planner Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: daily-planner-import-alias
+trigger: "when importing modules"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/aloewright/daily-planner
+---
+
+# Daily Planner Import Alias
+
+## Action
+
+Use path aliases (@/, ~/) instead of relative imports
+
+## Evidence
+
+- Import analysis shows alias pattern
+- Example: import { x } from '@/lib/x'
+
+---
+id: daily-planner-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/aloewright/daily-planner
+---
+
+# Daily Planner Export Style
+
+## Action
+
+Prefer default exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: default
+
+---
+id: daily-planner-arch-type-based
+trigger: "when adding new code"
+confidence: 0.8
+domain: architecture
+source: repo-analysis
+source_repo: https://github.com/aloewright/daily-planner
+---
+
+# Daily Planner Arch Type Based
+
+## Action
+
+Place code in the appropriate type folder (components/, services/, utils/, etc.)
+
+## Evidence
+
+- Type-based module organization detected
+- Folders: app, components, hooks, lib, store
+
+---
+id: daily-planner-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/aloewright/daily-planner
+---
+
+# Daily Planner Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: daily-planner-workflow-feature-development
+trigger: "when implementing a new feature"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/aloewright/daily-planner
+---
+
+# Daily Planner Workflow Feature Development
+
+## Action
+
+Follow the feature-development workflow:
+1. Add feature implementation
+2. Add tests for feature
+3. Update documentation
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~28x per month
+- Files: /*, src/app/(app)/analytics/*, src/app/(app)/backlog/*
+
+---
+id: daily-planner-workflow-add-new-api-endpoint
+trigger: "when doing add new api endpoint"
+confidence: 0.7
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/aloewright/daily-planner
+---
+
+# Daily Planner Workflow Add New Api Endpoint
+
+## Action
+
+Follow the add-new-api-endpoint workflow:
+1. Create or update route handler file(s) in src/app/api/[resource]/[id]/route.ts or src/app/api/[resource]/route.ts
+2. Implement business logic and database access in the route handler(s)
+3. Optionally update related frontend files to consume the new API endpoint
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~4x per month
+- Files: src/app/api/*/route.ts, src/app/api/*/[id]/route.ts
+
+---
+id: daily-planner-workflow-add-new-app-page
+trigger: "when doing add new app page"
+confidence: 0.75
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/aloewright/daily-planner
+---
+
+# Daily Planner Workflow Add New App Page
+
+## Action
+
+Follow the add-new-app-page workflow:
+1. Create new page file in src/app/(app)/[page]/page.tsx
+2. Implement UI and logic for the page
+3. Optionally create or update supporting components in src/components/[feature]/
+4. Optionally add new API routes to support the page
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~5x per month
+- Files: src/app/(app)/*/page.tsx, src/components/*/*.tsx, src/app/api/*/route.ts
+
+---
+id: daily-planner-workflow-feature-development-with-api-and-store
+trigger: "when doing feature development with api and store"
+confidence: 0.65
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/aloewright/daily-planner
+---
+
+# Daily Planner Workflow Feature Development With Api And Store
+
+## Action
+
+Follow the feature-development-with-api-and-store workflow:
+1. Add or update API route(s) in src/app/api/[feature]/route.ts or src/app/api/[feature]/[id]/route.ts
+2. Add or update frontend store in src/store/[feature].ts
+3. Create or update UI components in src/components/[feature]/*.tsx
+4. Integrate API calls and state management in components
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~3x per month
+- Files: src/app/api/*/route.ts, src/app/api/*/[id]/route.ts, src/store/*.ts
+
+---
+id: daily-planner-workflow-prisma-schema-change-and-migration
+trigger: "when doing prisma schema change and migration"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/aloewright/daily-planner
+---
+
+# Daily Planner Workflow Prisma Schema Change And Migration
+
+## Action
+
+Follow the prisma-schema-change-and-migration workflow:
+1. Edit prisma/schema.prisma to define new or updated models
+2. Generate and apply a new migration in prisma/migrations/
+3. Update or add seed data in prisma/seed.ts
+4. Update backend logic or API routes to use new/changed models
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: prisma/schema.prisma, prisma/migrations/*/migration.sql, prisma/seed.ts
+
+---
+id: daily-planner-workflow-ui-layout-or-shell-update
+trigger: "when doing ui layout or shell update"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/aloewright/daily-planner
+---
+
+# Daily Planner Workflow Ui Layout Or Shell Update
+
+## Action
+
+Follow the ui-layout-or-shell-update workflow:
+1. Edit src/app/(app)/layout.tsx or src/app/layout.tsx
+2. Create or update layout components in src/components/layout/*.tsx
+3. Wire layout components into the main layout file
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: src/app/(app)/layout.tsx, src/app/layout.tsx, src/components/layout/*.tsx
+
+---
+id: daily-planner-instinct-file-naming
+trigger: "When creating a new file (component, hook, utility, etc.)"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: aloewright/daily-planner
+---
+
+# Daily Planner Instinct File Naming
+
+## Action
+
+Name the file using camelCase (e.g., taskPanel.tsx, useTimer.ts)
+
+## Evidence
+
+- Pattern in src/components/taskPanel.tsx, src/hooks/useTimer.ts
+- Naming conventions specified in analysis
+
+---
+id: daily-planner-instinct-function-naming
+trigger: "When defining a new function"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: aloewright/daily-planner
+---
+
+# Daily Planner Instinct Function Naming
+
+## Action
+
+Name the function using camelCase (e.g., addTask, fetchBoardData)
+
+## Evidence
+
+- Pattern in src/store/taskStore.ts, src/lib/db.ts
+- Naming conventions specified in analysis
+
+---
+id: daily-planner-instinct-class-naming
+trigger: "When defining a new class"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: aloewright/daily-planner
+---
+
+# Daily Planner Instinct Class Naming
+
+## Action
+
+Name the class using PascalCase (e.g., TaskPanel, BoardView)
+
+## Evidence
+
+- Pattern in src/components/BoardView.tsx
+- Naming conventions specified in analysis
+
+---
+id: daily-planner-instinct-constant-naming
+trigger: "When defining a constant"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: aloewright/daily-planner
+---
+
+# Daily Planner Instinct Constant Naming
+
+## Action
+
+Name the constant using SCREAMING_SNAKE_CASE (e.g., DEFAULT_TIMEOUT)
+
+## Evidence
+
+- Pattern in src/lib/constants.ts
+- Naming conventions specified in analysis
+
+---
+id: daily-planner-instinct-import-alias
+trigger: "When importing modules"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: aloewright/daily-planner
+---
+
+# Daily Planner Instinct Import Alias
+
+## Action
+
+Use alias import style (e.g., import { X } from '@/lib/x')
+
+## Evidence
+
+- Pattern in src/components/* and src/lib/*
+- Import style specified in analysis
+
+---
+id: daily-planner-instinct-export-default
+trigger: "When exporting a module or component"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: aloewright/daily-planner
+---
+
+# Daily Planner Instinct Export Default
+
+## Action
+
+Use default export style
+
+## Evidence
+
+- Pattern in src/components/*/*.tsx
+- Export style specified in analysis
+
+---
+id: daily-planner-instinct-try-catch-error-handling
+trigger: "When handling errors in code"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: aloewright/daily-planner
+---
+
+# Daily Planner Instinct Try Catch Error Handling
+
+## Action
+
+Use try-catch blocks for error handling; do not use custom error classes or error boundaries
+
+## Evidence
+
+- Pattern in src/app/api/*/route.ts
+- Error handling style specified in analysis
+
+---
+id: daily-planner-instinct-test-location
+trigger: "When adding tests for a feature or module"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: aloewright/daily-planner
+---
+
+# Daily Planner Instinct Test Location
+
+## Action
+
+Place test files in a separate test directory, not alongside source files
+
+## Evidence
+
+- Test location specified as 'separate' in architecture analysis
+
+---
+id: daily-planner-instinct-test-after-feature
+trigger: "When implementing a new feature"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: aloewright/daily-planner
+---
+
+# Daily Planner Instinct Test After Feature
+
+## Action
+
+Add tests for the feature after implementation, following the commit sequence
+
+## Evidence
+
+- Commit sequence in feature-development workflow includes adding tests after implementation
+
+---
+id: daily-planner-instinct-git-conventional-commits
+trigger: "When writing a commit message"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: aloewright/daily-planner
+---
+
+# Daily Planner Instinct Git Conventional Commits
+
+## Action
+
+Use Conventional Commits format with a prefix (feat, fix, chore), optional scope, and a concise description
+
+## Evidence
+
+- Examples: 'feat(board): board view with day columns and task cards', 'fix(board): add error handling to api routes'
+- Commit format specified in analysis
+
+---
+id: daily-planner-instinct-git-commit-length
+trigger: "When composing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: aloewright/daily-planner
+---
+
+# Daily Planner Instinct Git Commit Length
+
+## Action
+
+Keep the commit message length around 72 characters on average
+
+## Evidence
+
+- Average commit message length is 72 characters
+
+---
+id: daily-planner-instinct-add-new-api-endpoint
+trigger: "When someone wants to expose new backend functionality or data to the frontend"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: aloewright/daily-planner
+---
+
+# Daily Planner Instinct Add New Api Endpoint
+
+## Action
+
+Create or update route handler file(s) in src/app/api/[resource]/[id]/route.ts or src/app/api/[resource]/route.ts, implement business logic and database access, and optionally update related frontend files to consume the new API endpoint
+
+## Evidence
+
+- Workflow: add-new-api-endpoint
+- Pattern in files: src/app/api/*/route.ts, src/app/api/*/[id]/route.ts
+
+---
+id: daily-planner-instinct-add-new-app-page
+trigger: "When someone wants to add a new user-facing page"
+confidence: 0.93
+domain: workflow
+source: repo-analysis
+source_repo: aloewright/daily-planner
+---
+
+# Daily Planner Instinct Add New App Page
+
+## Action
+
+Create new page file in src/app/(app)/[page]/page.tsx, implement UI and logic, optionally create or update supporting components in src/components/[feature]/, and optionally add new API routes to support the page
+
+## Evidence
+
+- Workflow: add-new-app-page
+- Pattern in files: src/app/(app)/*/page.tsx, src/components/*/*.tsx
+
+---
+id: daily-planner-instinct-feature-dev-api-store
+trigger: "When someone wants to add a complex feature that needs new API endpoints and frontend state management"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: aloewright/daily-planner
+---
+
+# Daily Planner Instinct Feature Dev Api Store
+
+## Action
+
+Add or update API route(s) in src/app/api/[feature]/route.ts or src/app/api/[feature]/[id]/route.ts, add or update frontend store in src/store/[feature].ts, create or update UI components in src/components/[feature]/*.tsx, and integrate API calls and state management in components
+
+## Evidence
+
+- Workflow: feature-development-with-api-and-store
+- Pattern in files: src/app/api/*/route.ts, src/store/*.ts, src/components/*/*.tsx
+
+---
+id: daily-planner-instinct-prisma-schema-migration
+trigger: "When someone wants to add or modify database tables/models"
+confidence: 0.88
+domain: workflow
+source: repo-analysis
+source_repo: aloewright/daily-planner
+---
+
+# Daily Planner Instinct Prisma Schema Migration
+
+## Action
+
+Edit prisma/schema.prisma to define new or updated models, generate and apply a new migration in prisma/migrations/, update or add seed data in prisma/seed.ts, and update backend logic or API routes to use new/changed models
+
+## Evidence
+
+- Workflow: prisma-schema-change-and-migration
+- Pattern in files: prisma/schema.prisma, prisma/migrations/*/migration.sql, prisma/seed.ts
+
+---
+id: daily-planner-instinct-ui-layout-shell-update
+trigger: "When someone wants to add or change the app shell, navigation, or persistent UI elements"
+confidence: 0.85
+domain: workflow
+source: repo-analysis
+source_repo: aloewright/daily-planner
+---
+
+# Daily Planner Instinct Ui Layout Shell Update
+
+## Action
+
+Edit src/app/(app)/layout.tsx or src/app/layout.tsx, create or update layout components in src/components/layout/*.tsx, and wire layout components into the main layout file
+
+## Evidence
+
+- Workflow: ui-layout-or-shell-update
+- Pattern in files: src/app/(app)/layout.tsx, src/components/layout/*.tsx
+
