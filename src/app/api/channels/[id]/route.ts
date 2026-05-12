@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
+
+export const runtime = 'edge'
 
 type Params = { params: Promise<{ id: string }> }
 
 export async function DELETE(_request: NextRequest, { params }: Params) {
+  const db = getDb()
   const { id } = await params
   try {
     await db.channel.delete({ where: { id } })

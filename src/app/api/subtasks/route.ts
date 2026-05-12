@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
+
+export const runtime = 'edge'
 
 export async function POST(request: NextRequest) {
+  const db = getDb()
   try {
-    const body = await request.json()
+    const body = await request.json() as { taskId?: string; title?: string; plannedTime?: number }
     const { taskId, title, plannedTime } = body
 
     if (!taskId || !title?.trim()) {

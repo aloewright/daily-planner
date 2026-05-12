@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
+
+export const runtime = 'edge'
 
 type Params = { params: Promise<{ id: string }> }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
+  const db = getDb()
   const { id } = await params
 
   try {
-    const body = await request.json()
+    const body = await request.json() as { title?: string; plannedTime?: number; actualTime?: number; completed?: boolean }
     const { title, plannedTime, actualTime, completed } = body
 
     const data: Record<string, unknown> = {}
@@ -29,6 +32,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(_request: NextRequest, { params }: Params) {
+  const db = getDb()
   const { id } = await params
 
   try {

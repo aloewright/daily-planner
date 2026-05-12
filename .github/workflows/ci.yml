@@ -41,3 +41,18 @@ jobs:
 
       - name: Lint
         run: bun run lint
+
+  build:
+    name: Cloudflare Pages Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Generate Prisma client
+        run: bunx prisma generate
+      - name: Build for Cloudflare Pages
+        run: bunx @cloudflare/next-on-pages
