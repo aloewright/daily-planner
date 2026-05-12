@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
+
+export const runtime = 'edge'
 
 type Params = { params: Promise<{ id: string }> }
 
 export async function POST(_req: Request, { params }: Params) {
+  const db = getDb()
   const { id } = await params
   try {
     const task = await db.task.findUnique({ where: { id } })

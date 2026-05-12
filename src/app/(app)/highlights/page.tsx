@@ -34,7 +34,7 @@ export default function HighlightsPage() {
   // Load the highlights-enabled setting
   useEffect(() => {
     fetch('/api/settings')
-      .then((r) => r.json())
+      .then((r) => r.json() as Promise<Record<string, unknown>>)
       .then((data) => {
         if (typeof data.highlightsEnabled === 'boolean') {
           setEnabled(data.highlightsEnabled)

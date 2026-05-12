@@ -427,8 +427,8 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetch('/api/settings')
-      .then((r) => r.json())
-      .then((data: UserSettings) => setSettings((prev) => ({ ...prev, ...data })))
+      .then((r) => r.json() as Promise<UserSettings>)
+      .then((data) => setSettings((prev) => ({ ...prev, ...data })))
       .catch(() => {})
   }, [])
 

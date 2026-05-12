@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
+
+export const runtime = 'edge'
 
 const DEMO_USER_ID = 'cmp1m2r1l0000yz1ib341e9o5'
 
 export async function GET(request: NextRequest) {
+  const db = getDb()
   const { searchParams } = new URL(request.url)
   const startDate = searchParams.get('startDate')
   const endDate = searchParams.get('endDate')
@@ -52,8 +55,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const db = getDb()
   try {
-    const body = await request.json()
+    const body = await request.json() as { title?: string; startDate?: string; channelId?: string; plannedTime?: number; scheduledTime?: string; backlogStatus?: string }
     const { title, startDate, channelId, plannedTime, scheduledTime, backlogStatus } = body
 
     if (!title?.trim()) {
