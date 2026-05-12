@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tasks            Task[]
+  channels         Channel[]
+  contexts         Context[]
+  weeklyObjectives WeeklyObjective[]
+  dailyPlans       DailyPlan[]
+  comments         Comment[]
+  settings         UserSettings?
+}
+
+model Context {
+  id       String    @id @default(cuid())
+  name     String
+  userId   String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channels Channel[]
+
+  @@unique([userId, name])
+}
+
+model Channel {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#f59e0b")
+  contextId String?
+  context   Context? @relation(fields: [contextId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+
+  @@unique([userId, name])
+}
+
+model Task {
+  id             String          @id @default(cuid())
+  title          String
+  description    String          @default("")
+  notes          String          @default("")
+  channelId      String?
+  channel        Channel?        @relation(fields: [channelId], references: [id])
+  startDate      DateTime?
+  dueDate        DateTime?
+  scheduledTime  String?
+  plannedTime    Int             @default(0)
+  actualTime     Int             @default(0)
+  timerStartedAt DateTime?
+  completed      Boolean         @default(false)
+  completedAt    DateTime?
+  priority       String          @default("normal")
+  backlogStatus  String?
+  sortOrder      Int             @default(0)
+  archived       Boolean         @default(false)
+  recurring      String?
+  userId         String
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subtasks       Subtask[]
+  comments       Comment[]
+  dailyPlanTasks DailyPlanTask[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Subtask {
+  id          String  @id @default(cuid())
+  title       String
+  plannedTime Int     @default(0)
+  actualTime  Int     @default(0)
+  completed   Boolean @default(false)
+  sortOrder   Int     @default(0)
+  taskId      String
+  task        Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  body      String
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model WeeklyObjective {
+  id        String   @id @default(cuid())
+  text      String
+  weekStart DateTime
+  completed Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model DailyPlan {
+  id        String          @id @default(cuid())
+  date      DateTime
+  obstacles String          @default("")
+  sharedAt  DateTime?
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks     DailyPlanTask[]
+
+  @@unique([userId, date])
+}
+
+model DailyPlanTask {
+  id          String    @id @default(cuid())
+  dailyPlanId String
+  dailyPlan   DailyPlan @relation(fields: [dailyPlanId], references: [id], onDelete: Cascade)
+  taskId      String
+  task        Task      @relation(fields: [taskId], references: [id])
+  sortOrder   Int       @default(0)
+}
+
+model UserSettings {
+  userId                 String  @id
+  user                   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  timezone               String  @default("America/New_York")
+  timeFormat             String  @default("12h")
+  startOfWeek            String  @default("monday")
+  workStartTime          String  @default("09:00")
+  workEndTime            String  @default("17:00")
+  dailyPlanningTime      String  @default("09:00")
+  weeklyPlanningDay      String  @default("monday")
+  weeklyPlanningTime     String  @default("09:00")
+  automatedDailyPlanning Boolean @default(false)
+  automatedShutdown      Boolean @default(false)
+  endOfDayMessage        String  @default("daily-encouragement")
+  countPlannedAsActual   Boolean @default(false)
+  autoSortTasks          Boolean @default(false)
+  aiChannelRecs          Boolean @default(true)
+  aiTimerRecs            Boolean @default(true)
+  aiSummaries            Boolean @default(false)
+  onboardingCompleted    Boolean @default(false)
+}
