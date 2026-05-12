@@ -1,17 +1,21 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
+import { createAuth } from '@/lib/auth'
 import { userSettings } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
 
 
-const DEMO_USER_ID = 'cmp1m2r1l0000yz1ib341e9o5'
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   const db = getDb()
+  const session = await createAuth(db).api.getSession({ headers: request.headers })
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const userId = session.user.id
   try {
-    const [settings] = await db.select().from(userSettings).where(eq(userSettings.userId, DEMO_USER_ID)).limit(1)
+    const [settings] = await db.select().from(userSettings).where(eq(userSettings.userId, userId)).limit(1)
     if (!settings) {
-      const [created] = await db.insert(userSettings).values({ userId: DEMO_USER_ID }).returning()
+      const [created] = await db.insert(userSettings).values({ userId }).returning()
       return NextResponse.json(created)
     }
     return NextResponse.json(settings)
@@ -20,8 +24,13 @@ export async function GET() {
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
   const db = getDb()
+  const session = await createAuth(db).api.getSession({ headers: request.headers })
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const userId = session.user.id
   try {
     const body = await request.json() as Record<string, unknown>
     // Allowlist only known UserSettings fields to prevent overwriting protected columns
@@ -44,7 +53,7 @@ export async function PUT(request: Request) {
     ) as Partial<typeof userSettings.$inferInsert>
 
     const [settings] = await db.insert(userSettings)
-      .values({ userId: DEMO_USER_ID, ...data })
+      .values({ userId, ...data })
       .onConflictDoUpdate({ target: userSettings.userId, set: data })
       .returning()
 

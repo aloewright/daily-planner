@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
+import { createAuth } from '@/lib/auth'
 import { comments, users } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
 import { createId } from '@paralleldrive/cuid2'
 
 
-const DEMO_USER_ID = 'cmp1m2r1l0000yz1ib341e9o5'
-
 export async function POST(request: NextRequest) {
   const db = getDb()
+  const session = await createAuth(db).api.getSession({ headers: request.headers })
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const userId = session.user.id
   try {
     const body = await request.json() as { taskId?: string; body?: string }
     const { taskId, body: commentBody } = body
@@ -21,7 +25,7 @@ export async function POST(request: NextRequest) {
       id: createId(),
       taskId,
       body: commentBody.trim(),
-      userId: DEMO_USER_ID,
+      userId,
     }).returning()
 
     // Fetch user info separately (no include in Drizzle)
@@ -29,7 +33,7 @@ export async function POST(request: NextRequest) {
       id: users.id,
       name: users.name,
       email: users.email,
-    }).from(users).where(eq(users.id, DEMO_USER_ID)).limit(1)
+    }).from(users).where(eq(users.id, userId)).limit(1)
 
     return NextResponse.json({ ...comment, user: user ?? null }, { status: 201 })
   } catch (error) {

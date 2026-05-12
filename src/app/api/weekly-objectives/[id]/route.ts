@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
+import { createAuth } from '@/lib/auth'
 import { weeklyObjectives } from '@/lib/schema'
 import { eq, and } from 'drizzle-orm'
 
-
-const DEMO_USER_ID = 'cmp1m2r1l0000yz1ib341e9o5'
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const db = getDb()
+  const session = await createAuth(db).api.getSession({ headers: request.headers })
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const userId = session.user.id
   try {
     const { id } = await params
     const body = await request.json() as { text?: string; completed?: boolean }
@@ -22,7 +26,7 @@ export async function PATCH(
 
     const [objective] = await db.update(weeklyObjectives)
       .set(data)
-      .where(and(eq(weeklyObjectives.id, id), eq(weeklyObjectives.userId, DEMO_USER_ID)))
+      .where(and(eq(weeklyObjectives.id, id), eq(weeklyObjectives.userId, userId)))
       .returning()
 
     return NextResponse.json(objective)
@@ -37,11 +41,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const db = getDb()
+  const session = await createAuth(db).api.getSession({ headers: request.headers })
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const userId = session.user.id
   try {
     const { id } = await params
 
     await db.delete(weeklyObjectives)
-      .where(and(eq(weeklyObjectives.id, id), eq(weeklyObjectives.userId, DEMO_USER_ID)))
+      .where(and(eq(weeklyObjectives.id, id), eq(weeklyObjectives.userId, userId)))
 
     return NextResponse.json({ success: true })
   } catch (error) {

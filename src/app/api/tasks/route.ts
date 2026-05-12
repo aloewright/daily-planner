@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
+import { createAuth } from '@/lib/auth'
 import { tasks, channels, subtasks, comments } from '@/lib/schema'
 import { eq, and, gte, lte, isNotNull, asc, inArray } from 'drizzle-orm'
 import { createId } from '@paralleldrive/cuid2'
-
-
-const DEMO_USER_ID = 'cmp1m2r1l0000yz1ib341e9o5'
 
 // Convert a JS Date to SQLite text format used by Prisma: "YYYY-MM-DD HH:MM:SS"
 function toSqliteText(d: Date): string {
@@ -14,6 +12,11 @@ function toSqliteText(d: Date): string {
 
 export async function GET(request: NextRequest) {
   const db = getDb()
+  const session = await createAuth(db).api.getSession({ headers: request.headers })
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const userId = session.user.id
   const { searchParams } = new URL(request.url)
   const startDate = searchParams.get('startDate')
   const endDate = searchParams.get('endDate')
@@ -21,7 +24,7 @@ export async function GET(request: NextRequest) {
   const completedParam = searchParams.get('completed')
 
   const conditions = [
-    eq(tasks.userId, DEMO_USER_ID),
+    eq(tasks.userId, userId),
     eq(tasks.archived, false),
   ]
 
@@ -75,6 +78,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const db = getDb()
+  const session = await createAuth(db).api.getSession({ headers: request.headers })
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const userId = session.user.id
   try {
     const body = await request.json() as {
       title?: string; startDate?: string; channelId?: string;
@@ -91,7 +99,7 @@ export async function POST(request: NextRequest) {
     const [task] = await db.insert(tasks).values({
       id: createId(),
       title: title.trim(),
-      userId: DEMO_USER_ID,
+      userId,
       startDate: startDateStr,
       channelId: channelId ?? null,
       plannedTime: plannedTime ?? 0,

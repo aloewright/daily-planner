@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
+import { createAuth } from '@/lib/auth'
 import { tasks, dailyPlans } from '@/lib/schema'
 import { eq, and, gte, lte, inArray } from 'drizzle-orm'
 import { createId } from '@paralleldrive/cuid2'
-
-
-const DEMO_USER_ID = 'cmp1m2r1l0000yz1ib341e9o5'
 
 // Convert a JS Date to SQLite text format: "YYYY-MM-DD HH:MM:SS"
 function toSqliteText(d: Date): string {
@@ -14,6 +12,11 @@ function toSqliteText(d: Date): string {
 
 export async function POST(request: NextRequest) {
   const db = getDb()
+  const session = await createAuth(db).api.getSession({ headers: request.headers })
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const userId = session.user.id
   try {
     const body = await request.json()
     const { date, intention } = body as { date: string; intention?: string }
@@ -28,7 +31,7 @@ export async function POST(request: NextRequest) {
     // Find all incomplete tasks for the given date
     const incompleteTasks = await db.select().from(tasks).where(
       and(
-        eq(tasks.userId, DEMO_USER_ID),
+        eq(tasks.userId, userId),
         eq(tasks.archived, false),
         eq(tasks.completed, false),
         gte(tasks.startDate, dayStart),
@@ -54,7 +57,7 @@ export async function POST(request: NextRequest) {
       // Check if a daily plan already exists for this user + date
       const [existingPlan] = await db.select().from(dailyPlans).where(
         and(
-          eq(dailyPlans.userId, DEMO_USER_ID),
+          eq(dailyPlans.userId, userId),
           eq(dailyPlans.date, tomorrowDateStr),
         )
       ).limit(1)
@@ -66,7 +69,7 @@ export async function POST(request: NextRequest) {
       } else {
         await db.insert(dailyPlans).values({
           id: createId(),
-          userId: DEMO_USER_ID,
+          userId: userId,
           date: tomorrowDateStr,
           obstacles: intention.trim(),
         })

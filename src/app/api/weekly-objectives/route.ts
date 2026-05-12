@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
+import { createAuth } from '@/lib/auth'
 import { weeklyObjectives } from '@/lib/schema'
 import { eq, and, gte, lt, asc } from 'drizzle-orm'
 import { createId } from '@paralleldrive/cuid2'
 
 
-const DEMO_USER_ID = 'cmp1m2r1l0000yz1ib341e9o5'
-
 export async function GET(request: NextRequest) {
   const db = getDb()
+  const session = await createAuth(db).api.getSession({ headers: request.headers })
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const userId = session.user.id
   const { searchParams } = new URL(request.url)
   const weekStart = searchParams.get('weekStart')
 
@@ -23,14 +27,14 @@ export async function GET(request: NextRequest) {
       const endStr = end.toISOString().replace('T', ' ').substring(0, 19)
       result = await db.select().from(weeklyObjectives).where(
         and(
-          eq(weeklyObjectives.userId, DEMO_USER_ID),
+          eq(weeklyObjectives.userId, userId),
           gte(weeklyObjectives.weekStart, startStr),
           lt(weeklyObjectives.weekStart, endStr),
         )
       ).orderBy(asc(weeklyObjectives.createdAt))
     } else {
       result = await db.select().from(weeklyObjectives).where(
-        eq(weeklyObjectives.userId, DEMO_USER_ID)
+        eq(weeklyObjectives.userId, userId)
       ).orderBy(asc(weeklyObjectives.createdAt))
     }
     return NextResponse.json(result)
@@ -42,6 +46,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const db = getDb()
+  const session = await createAuth(db).api.getSession({ headers: request.headers })
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const userId = session.user.id
   try {
     const body = await request.json() as { weekStart?: string; text?: string }
     const { weekStart, text } = body
@@ -59,7 +68,7 @@ export async function POST(request: NextRequest) {
       id: createId(),
       text: text.trim(),
       weekStart: weekStartStr,
-      userId: DEMO_USER_ID,
+      userId,
     }).returning()
 
     return NextResponse.json(objective, { status: 201 })

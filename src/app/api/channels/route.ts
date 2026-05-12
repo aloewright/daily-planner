@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
+import { createAuth } from '@/lib/auth'
 import { channels } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
 import { createId } from '@paralleldrive/cuid2'
 
 
-const DEMO_USER_ID = 'cmp1m2r1l0000yz1ib341e9o5'
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const db = getDb()
-    const result = await db.select().from(channels).where(eq(channels.userId, DEMO_USER_ID))
+    const session = await createAuth(db).api.getSession({ headers: request.headers })
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const userId = session.user.id
+    const result = await db.select().from(channels).where(eq(channels.userId, userId))
     return NextResponse.json(result)
   } catch (err) {
     console.error('[GET /api/channels]', String(err))
@@ -20,6 +24,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const db = getDb()
+  const session = await createAuth(db).api.getSession({ headers: request.headers })
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const userId = session.user.id
   try {
     const body = await request.json() as { name?: string; color?: string }
     const { name, color } = body
@@ -30,7 +39,7 @@ export async function POST(request: NextRequest) {
       id: createId(),
       name: name.trim(),
       color: color ?? '#6b7280',
-      userId: DEMO_USER_ID,
+      userId,
     }).returning()
     return NextResponse.json(channel, { status: 201 })
   } catch {

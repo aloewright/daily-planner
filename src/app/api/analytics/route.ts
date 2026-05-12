@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
+import { createAuth } from '@/lib/auth'
 import { tasks, channels } from '@/lib/schema'
 import { eq, and, gte, lte, inArray } from 'drizzle-orm'
 import { format } from 'date-fns'
-
-
-const DEMO_USER_ID = 'cmp1m2r1l0000yz1ib341e9o5'
 
 // Convert a JS Date to SQLite text format: "YYYY-MM-DD HH:MM:SS"
 function toSqliteText(d: Date): string {
@@ -14,6 +12,11 @@ function toSqliteText(d: Date): string {
 
 export async function GET(request: NextRequest) {
   const db = getDb()
+  const session = await createAuth(db).api.getSession({ headers: request.headers })
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const userId = session.user.id
   const { searchParams } = new URL(request.url)
   const startDate = searchParams.get('startDate')
   const endDate = searchParams.get('endDate')
@@ -29,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     const taskList = await db.select().from(tasks).where(
       and(
-        eq(tasks.userId, DEMO_USER_ID),
+        eq(tasks.userId, userId),
         eq(tasks.completed, true),
         eq(tasks.archived, false),
         gte(tasks.completedAt, startStr),
