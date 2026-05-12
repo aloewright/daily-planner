@@ -1,31 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
+import { tasks, channels, subtasks, comments } from '@/lib/schema'
+import { eq } from 'drizzle-orm'
 
-export const runtime = 'edge'
 
 type Params = { params: Promise<{ id: string }> }
+
+// Convert a JS Date to SQLite text format: "YYYY-MM-DD HH:MM:SS"
+function toSqliteText(d: Date): string {
+  return d.toISOString().replace('T', ' ').substring(0, 19)
+}
 
 export async function POST(_request: NextRequest, { params }: Params) {
   const db = getDb()
   const { id } = await params
   try {
-    const existing = await db.task.findUnique({ where: { id } })
+    const [existing] = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1)
     if (!existing) return NextResponse.json({ error: 'Task not found' }, { status: 404 })
 
-    const task = await db.task.update({
-      where: { id },
-      data: {
-        completed: !existing.completed,
-        completedAt: !existing.completed ? new Date() : null,
-      },
-      include: { channel: true, subtasks: true, comments: true },
+    const nowStr = toSqliteText(new Date())
+    const [updated] = await db.update(tasks).set({
+      completed: !existing.completed,
+      completedAt: !existing.completed ? nowStr : null,
+      updatedAt: nowStr,
+    }).where(eq(tasks.id, id)).returning()
+
+    const [taskChannel, taskSubtasks, taskComments] = await Promise.all([
+      updated.channelId
+        ? db.select().from(channels).where(eq(channels.id, updated.channelId)).limit(1).then((r) => r[0] ?? null)
+        : Promise.resolve(null),
+      db.select().from(subtasks).where(eq(subtasks.taskId, id)),
+      db.select().from(comments).where(eq(comments.taskId, id)),
+    ])
+
+    return NextResponse.json({
+      ...updated,
+      channel: taskChannel,
+      subtasks: taskSubtasks,
+      comments: taskComments,
     })
-    return NextResponse.json(task)
-  } catch (error: unknown) {
-    const prismaError = error as { code?: string }
-    if (prismaError?.code === 'P2025') {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 })
-    }
+  } catch (error) {
     console.error('[POST /api/tasks/[id]/complete]', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

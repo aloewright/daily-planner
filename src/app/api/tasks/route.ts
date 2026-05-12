@@ -1,53 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
+import { tasks, channels, subtasks, comments } from '@/lib/schema'
+import { eq, and, gte, lte, isNotNull, asc, inArray } from 'drizzle-orm'
+import { createId } from '@paralleldrive/cuid2'
 
-export const runtime = 'edge'
 
 const DEMO_USER_ID = 'cmp1m2r1l0000yz1ib341e9o5'
+
+// Convert a JS Date to SQLite text format used by Prisma: "YYYY-MM-DD HH:MM:SS"
+function toSqliteText(d: Date): string {
+  return d.toISOString().replace('T', ' ').substring(0, 19)
+}
 
 export async function GET(request: NextRequest) {
   const db = getDb()
   const { searchParams } = new URL(request.url)
   const startDate = searchParams.get('startDate')
   const endDate = searchParams.get('endDate')
-  // userId param accepted but we use demo user for now
-  // const userId = searchParams.get('userId') ?? DEMO_USER_ID
-
   const backlogStatus = searchParams.get('backlogStatus')
+  const completedParam = searchParams.get('completed')
 
-  const where: Record<string, unknown> = {
-    userId: DEMO_USER_ID,
-    archived: false,
-  }
+  const conditions = [
+    eq(tasks.userId, DEMO_USER_ID),
+    eq(tasks.archived, false),
+  ]
 
   if (backlogStatus === 'all') {
-    where.backlogStatus = { not: null }
+    conditions.push(isNotNull(tasks.backlogStatus))
   } else if (backlogStatus) {
-    where.backlogStatus = backlogStatus
+    conditions.push(eq(tasks.backlogStatus, backlogStatus))
   }
 
-  const completed = searchParams.get('completed')
-  if (completed === 'true') where.completed = true
-  else if (completed === 'false') where.completed = false
+  if (completedParam === 'true') conditions.push(eq(tasks.completed, true))
+  else if (completedParam === 'false') conditions.push(eq(tasks.completed, false))
 
   if (startDate && endDate) {
-    where.startDate = {
-      gte: new Date(startDate),
-      lte: new Date(endDate + 'T23:59:59.999Z'),
-    }
+    const start = toSqliteText(new Date(startDate))
+    const end = toSqliteText(new Date(endDate + 'T23:59:59.999Z'))
+    conditions.push(gte(tasks.startDate, start))
+    conditions.push(lte(tasks.startDate, end))
   }
 
   try {
-    const tasks = await db.task.findMany({
-      where,
-      include: {
-        channel: true,
-        subtasks: true,
-        comments: true,
-      },
-      orderBy: [{ startDate: 'asc' }, { sortOrder: 'asc' }],
-    })
-    return NextResponse.json(tasks)
+    const taskList = await db.select().from(tasks)
+      .where(and(...conditions))
+      .orderBy(asc(tasks.startDate), asc(tasks.sortOrder))
+
+    if (taskList.length === 0) return NextResponse.json([])
+
+    const taskIds = taskList.map((t) => t.id)
+    const channelIds = [...new Set(taskList.map((t) => t.channelId).filter(Boolean))] as string[]
+
+    const [channelList, allSubtasks, allComments] = await Promise.all([
+      channelIds.length > 0
+        ? db.select().from(channels).where(inArray(channels.id, channelIds))
+        : Promise.resolve([]),
+      db.select().from(subtasks).where(inArray(subtasks.taskId, taskIds)),
+      db.select().from(comments).where(inArray(comments.taskId, taskIds)),
+    ])
+
+    const channelMap = new Map(channelList.map((c) => [c.id, c]))
+
+    return NextResponse.json(taskList.map((t) => ({
+      ...t,
+      channel: t.channelId ? (channelMap.get(t.channelId) ?? null) : null,
+      subtasks: allSubtasks.filter((s) => s.taskId === t.id),
+      comments: allComments.filter((c) => c.taskId === t.id),
+    })))
   } catch (error) {
     console.error('[GET /api/tasks]', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -57,31 +76,44 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const db = getDb()
   try {
-    const body = await request.json() as { title?: string; startDate?: string; channelId?: string; plannedTime?: number; scheduledTime?: string; backlogStatus?: string }
+    const body = await request.json() as {
+      title?: string; startDate?: string; channelId?: string;
+      plannedTime?: number; scheduledTime?: string; backlogStatus?: string
+    }
     const { title, startDate, channelId, plannedTime, scheduledTime, backlogStatus } = body
 
     if (!title?.trim()) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
     }
 
-    const task = await db.task.create({
-      data: {
-        title: title.trim(),
-        userId: DEMO_USER_ID,
-        startDate: startDate ? new Date(startDate) : null,
-        channelId: channelId ?? null,
-        plannedTime: plannedTime ?? 0,
-        scheduledTime: scheduledTime ?? null,
-        backlogStatus: backlogStatus ?? null,
-      },
-      include: {
-        channel: true,
-        subtasks: true,
-        comments: true,
-      },
-    })
+    const startDateStr = startDate ? toSqliteText(new Date(startDate)) : null
 
-    return NextResponse.json(task, { status: 201 })
+    const [task] = await db.insert(tasks).values({
+      id: createId(),
+      title: title.trim(),
+      userId: DEMO_USER_ID,
+      startDate: startDateStr,
+      channelId: channelId ?? null,
+      plannedTime: plannedTime ?? 0,
+      scheduledTime: scheduledTime ?? null,
+      backlogStatus: backlogStatus ?? null,
+    }).returning()
+
+    // Fetch related channel, subtasks, comments for the response
+    const [taskChannel, taskSubtasks, taskComments] = await Promise.all([
+      task.channelId
+        ? db.select().from(channels).where(eq(channels.id, task.channelId)).limit(1).then((r) => r[0] ?? null)
+        : Promise.resolve(null),
+      db.select().from(subtasks).where(eq(subtasks.taskId, task.id)),
+      db.select().from(comments).where(eq(comments.taskId, task.id)),
+    ])
+
+    return NextResponse.json({
+      ...task,
+      channel: taskChannel,
+      subtasks: taskSubtasks,
+      comments: taskComments,
+    }, { status: 201 })
   } catch (error) {
     console.error('[POST /api/tasks]', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

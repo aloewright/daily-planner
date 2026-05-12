@@ -9,13 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@cloudflare/next-on-pages": "^1.13.16",
-    "@cloudflare/workers-types": "^4.20260511.1",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@prisma/adapter-d1": "^7.8.0",
-    "@prisma/client": "^7.8.0",
+    "@opennextjs/cloudflare": "^1.19.9",
+    "@paralleldrive/cuid2": "^3.3.0",
     "@tanstack/react-query": "^5.100.10",
     "@tiptap/extension-placeholder": "^3.23.1",
     "@tiptap/react": "^3.23.1",
@@ -24,9 +22,9 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.14.0",
     "next": "16.2.6",
-    "prisma": "^7.8.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hot-toast": "^2.6.0",
@@ -39,6 +37,7 @@
     "@types/node": "^25.6.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
@@ -51,8 +50,5 @@
   "trustedDependencies": [
     "sharp",
     "unrs-resolver"
-  ],
-  "prisma": {
-    "seed": "bun prisma/seed.ts"
-  }
+  ]
 }

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
+import { subtasks } from '@/lib/schema'
+import { createId } from '@paralleldrive/cuid2'
 
-export const runtime = 'edge'
 
 export async function POST(request: NextRequest) {
   const db = getDb()
@@ -13,13 +14,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'taskId and title are required' }, { status: 400 })
     }
 
-    const subtask = await db.subtask.create({
-      data: {
-        taskId,
-        title: title.trim(),
-        plannedTime: plannedTime ?? 0,
-      },
-    })
+    const [subtask] = await db.insert(subtasks).values({
+      id: createId(),
+      taskId,
+      title: title.trim(),
+      plannedTime: plannedTime ?? 0,
+    }).returning()
 
     return NextResponse.json(subtask, { status: 201 })
   } catch (error) {
