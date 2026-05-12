@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
+
+export const runtime = 'edge'
 
 const DEMO_USER_ID = 'cmp1m2r1l0000yz1ib341e9o5'
 
 export async function GET() {
+  const db = getDb()
   try {
     const settings = await db.userSettings.findUnique({ where: { userId: DEMO_USER_ID } })
     if (!settings) {
@@ -17,8 +20,9 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  const db = getDb()
   try {
-    const body = await request.json()
+    const body = await request.json() as Record<string, unknown>
     // Allowlist only known UserSettings fields to prevent overwriting protected columns
     const {
       timezone, timeFormat, startOfWeek, workStartTime, workEndTime,

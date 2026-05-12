@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
+
+export const runtime = 'edge'
 
 const DEMO_USER_ID = 'cmp1m2r1l0000yz1ib341e9o5'
 
@@ -7,9 +9,10 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const db = getDb()
   try {
     const { id } = await params
-    const body = await request.json()
+    const body = await request.json() as { text?: string; completed?: boolean }
     const { text, completed } = body
 
     const data: Record<string, unknown> = {}
@@ -32,6 +35,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const db = getDb()
   try {
     const { id } = await params
 

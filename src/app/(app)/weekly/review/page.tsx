@@ -95,8 +95,8 @@ export default function WeeklyReviewPage() {
     const start = format(weekStart, 'yyyy-MM-dd')
     const end = format(weekEnd, 'yyyy-MM-dd')
     fetch(`/api/tasks?startDate=${start}&endDate=${end}`)
-      .then((r) => r.json())
-      .then((data: DbTask[]) => {
+      .then((r) => r.json() as Promise<DbTask[]>)
+      .then((data) => {
         const completed = Array.isArray(data) ? data.filter((t) => t.completed) : []
         setTasks(completed)
         setLoading(false)

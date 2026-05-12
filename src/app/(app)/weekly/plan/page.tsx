@@ -32,8 +32,8 @@ export default function WeeklyPlanPage() {
   useEffect(() => {
     setLoading(true)
     fetch(`/api/weekly-objectives?weekStart=${weekStartStr}`)
-      .then((r) => r.json())
-      .then((data: Objective[]) => {
+      .then((r) => r.json() as Promise<Objective[]>)
+      .then((data) => {
         setObjectives(Array.isArray(data) ? data : [])
         setLoading(false)
       })

@@ -280,8 +280,8 @@ export function TaskDetailPanel() {
   // ── Fetch channels once on mount ─────────────────────────────────────────
   useEffect(() => {
     fetch('/api/channels')
-      .then((r) => (r.ok ? r.json() : []))
-      .then((data: ApiChannel[]) => setChannels(Array.isArray(data) ? data : []))
+      .then((r) => (r.ok ? r.json() as Promise<ApiChannel[]> : []))
+      .then((data) => setChannels(Array.isArray(data) ? data : []))
       .catch(() => {/* silently ignore */})
   }, [])
 
@@ -311,7 +311,7 @@ export function TaskDetailPanel() {
           body: JSON.stringify(data),
         })
         if (!res.ok) return
-        const updated = await res.json()
+        const updated = await res.json() as ApiTaskDetail
         // Sync zustand store
         updateTask(selectedTaskId, {
           title: updated.title,
@@ -365,7 +365,7 @@ export function TaskDetailPanel() {
         body: JSON.stringify({ taskId: selectedTaskId, title: newSubtaskTitle.trim() }),
       })
       if (!res.ok) return
-      const newSub = await res.json()
+      const newSub = await res.json() as ApiSubtask
       setSubtasks((prev) => [...prev, newSub])
       setNewSubtaskTitle('')
       queryClient.invalidateQueries({ queryKey: ['task', selectedTaskId] })
@@ -383,7 +383,7 @@ export function TaskDetailPanel() {
         body: JSON.stringify({ completed: !subtask.completed }),
       })
       if (!res.ok) return
-      const updated = await res.json()
+      const updated = await res.json() as ApiSubtask
       setSubtasks((prev) => prev.map((s) => (s.id === subtask.id ? updated : s)))
     } catch (err) {
       console.error('[toggleSubtask]', err)
@@ -415,7 +415,7 @@ export function TaskDetailPanel() {
         body: JSON.stringify({ title }),
       })
       if (!res.ok) return
-      const updated = await res.json()
+      const updated = await res.json() as ApiSubtask
       setSubtasks((prev) => prev.map((s) => (s.id === id ? updated : s)))
     } catch (err) {
       console.error('[updateSubtaskTitle]', err)
@@ -432,7 +432,7 @@ export function TaskDetailPanel() {
         body: JSON.stringify({ taskId: selectedTaskId, body: newCommentBody.trim() }),
       })
       if (!res.ok) return
-      const newComment = await res.json()
+      const newComment = await res.json() as ApiComment
       setComments((prev) => [...prev, newComment])
       setNewCommentBody('')
       queryClient.invalidateQueries({ queryKey: ['task', selectedTaskId] })

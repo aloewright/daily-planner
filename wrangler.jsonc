@@ -1,0 +1,13 @@
+{
+  "name": "daily-planner",
+  "compatibility_date": "2025-01-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "pages_build_output_dir": ".vercel/output/static",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "daily-planner-db",
+      "database_id": "3afbe37d-947e-4f92-bbd9-db3be5065ea8"
+    }
+  ]
+}

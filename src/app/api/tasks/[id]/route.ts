@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
+
+export const runtime = 'edge'
 
 type Params = { params: Promise<{ id: string }> }
 
 export async function GET(_request: NextRequest, { params }: Params) {
+  const db = getDb()
   const { id } = await params
   try {
     const task = await db.task.findUnique({
@@ -25,9 +28,14 @@ export async function GET(_request: NextRequest, { params }: Params) {
 }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
+  const db = getDb()
   const { id } = await params
   try {
-    const body = await request.json()
+    const body = await request.json() as {
+      title?: string; description?: string; completed?: boolean; startDate?: string;
+      plannedTime?: number; actualTime?: number; channelId?: string | null; priority?: string;
+      scheduledTime?: string | null; notes?: string; sortOrder?: number; backlogStatus?: string | null;
+    }
     const {
       title, description, completed, startDate, plannedTime,
       actualTime, channelId, priority, scheduledTime, notes,
@@ -68,6 +76,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(_request: NextRequest, { params }: Params) {
+  const db = getDb()
   const { id } = await params
   try {
     await db.task.delete({ where: { id } })

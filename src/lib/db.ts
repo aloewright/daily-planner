@@ -1,18 +1,10 @@
+/// <reference types="@cloudflare/workers-types" />
 import { PrismaClient } from '@prisma/client'
-import { PrismaLibSql } from '@prisma/adapter-libsql'
+import { PrismaD1 } from '@prisma/adapter-d1'
+import { getRequestContext } from '@cloudflare/next-on-pages'
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined }
-
-function createPrismaClient() {
-  const adapter = new PrismaLibSql({
-    url: process.env.DATABASE_URL ?? 'file:./dev.db',
-  })
-  return new PrismaClient({
-    adapter,
-    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-  })
+export function getDb(): PrismaClient {
+  const { env } = getRequestContext() as unknown as { env: { DB: D1Database } }
+  const adapter = new PrismaD1(env.DB)
+  return new PrismaClient({ adapter })
 }
-
-export const db = globalForPrisma.prisma ?? createPrismaClient()
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
