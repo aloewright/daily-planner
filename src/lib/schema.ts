@@ -105,8 +105,8 @@ export const userSettings = sqliteTable('UserSettings', {
   onboardingCompleted: integer('onboardingCompleted', { mode: 'boolean' }).notNull().default(false),
 })
 
-// Better Auth tables
-export const authUsers = sqliteTable('user', {
+// Better Auth tables (prefixed to avoid case-insensitive collision with `User`)
+export const authUsers = sqliteTable('ba_user', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
@@ -116,7 +116,7 @@ export const authUsers = sqliteTable('user', {
   updatedAt: integer('updatedAt', { mode: 'timestamp' }).notNull(),
 })
 
-export const authSessions = sqliteTable('session', {
+export const authSessions = sqliteTable('ba_session', {
   id: text('id').primaryKey(),
   expiresAt: integer('expiresAt', { mode: 'timestamp' }).notNull(),
   token: text('token').notNull().unique(),
@@ -127,7 +127,7 @@ export const authSessions = sqliteTable('session', {
   userId: text('userId').notNull().references(() => authUsers.id, { onDelete: 'cascade' }),
 })
 
-export const authAccounts = sqliteTable('account', {
+export const authAccounts = sqliteTable('ba_account', {
   id: text('id').primaryKey(),
   accountId: text('accountId').notNull(),
   providerId: text('providerId').notNull(),
@@ -143,7 +143,7 @@ export const authAccounts = sqliteTable('account', {
   updatedAt: integer('updatedAt', { mode: 'timestamp' }).notNull(),
 })
 
-export const authVerifications = sqliteTable('verification', {
+export const authVerifications = sqliteTable('ba_verification', {
   id: text('id').primaryKey(),
   identifier: text('identifier').notNull(),
   value: text('value').notNull(),

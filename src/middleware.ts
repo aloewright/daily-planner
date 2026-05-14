@@ -1,22 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const PUBLIC_PATHS = ['/login', '/signup', '/api/auth']
+const PUBLIC_PATHS = ['/login', '/signup']
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Allow public paths
+  // API routes handle their own auth (return 401 instead of redirect)
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next()
+  }
+
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
     return NextResponse.next()
   }
 
-  // Allow Next.js internal paths and static files
   if (pathname.startsWith('/_next') || pathname.startsWith('/favicon')) {
     return NextResponse.next()
   }
 
-  // Check for Better Auth session cookie
-  const sessionToken = request.cookies.get('better-auth.session_token')
+  // Better Auth uses __Secure- prefix on HTTPS, no prefix on HTTP
+  const sessionToken =
+    request.cookies.get('__Secure-better-auth.session_token') ??
+    request.cookies.get('better-auth.session_token')
+
   if (!sessionToken?.value) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('callbackUrl', pathname)
