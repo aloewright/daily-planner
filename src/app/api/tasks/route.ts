@@ -86,9 +86,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as {
       title?: string; startDate?: string; channelId?: string;
-      plannedTime?: number; scheduledTime?: string; backlogStatus?: string
+      plannedTime?: number; scheduledTime?: string; backlogStatus?: string;
+      priority?: string; sortOrder?: number;
     }
-    const { title, startDate, channelId, plannedTime, scheduledTime, backlogStatus } = body
+    const { title, startDate, channelId, plannedTime, scheduledTime, backlogStatus, priority, sortOrder } = body
 
     if (!title?.trim()) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
@@ -105,6 +106,8 @@ export async function POST(request: NextRequest) {
       plannedTime: plannedTime ?? 0,
       scheduledTime: scheduledTime ?? null,
       backlogStatus: backlogStatus ?? null,
+      priority: priority ?? 'normal',
+      sortOrder: sortOrder ?? 0,
     }).returning()
 
     // Fetch related channel, subtasks, comments for the response

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { format } from 'date-fns'
 import {
   Check,
   GripVertical,
@@ -608,6 +609,8 @@ export function DailyPlanningWizard() {
   const [step, setStep] = useState(1)
   const [planTasks, setPlanTasks] = useState<PlanTask[]>([])
   const [obstacles, setObstacles] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const nextIdRef = useRef(1)
 
   function addTask(title: string) {
@@ -642,8 +645,65 @@ export function DailyPlanningWizard() {
     navigator.clipboard.writeText(text).catch(() => {})
   }, [planTasks, obstacles])
 
-  function handleFinish() {
+  function handleClose() {
     router.push('/board')
+  }
+
+  async function handleFinish() {
+    if (saving) return
+    setSaving(true)
+    setSaveError('')
+    try {
+      const todayStr = format(new Date(), 'yyyy-MM-dd')
+
+      // Calculate scheduledTime for each task starting at 09:00 with each task
+      // taking its plannedTime (or 30 min default).
+      let offsetMins = 0
+      const tasksToCreate = planTasks.map((t, i) => {
+        const startMins = 9 * 60 + offsetMins
+        const dur = t.plannedTime || 30
+        const scheduledTime = `${String(Math.floor(startMins / 60)).padStart(2, '0')}:${String(startMins % 60).padStart(2, '0')}`
+        offsetMins += dur
+        return {
+          title: t.title,
+          startDate: todayStr,
+          plannedTime: t.plannedTime,
+          priority: t.priority ? 'high' : 'normal',
+          scheduledTime,
+          sortOrder: i,
+        }
+      })
+
+      // POST each task; collect any failures
+      const results = await Promise.all(
+        tasksToCreate.map((task) =>
+          fetch('/api/tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(task),
+          }),
+        ),
+      )
+      const failed = results.find((r) => !r.ok)
+      if (failed) {
+        throw new Error(`Task save failed (${failed.status})`)
+      }
+
+      if (obstacles.trim()) {
+        const planRes = await fetch('/api/daily-plans', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: todayStr, obstacles: obstacles.trim() }),
+        })
+        if (!planRes.ok) throw new Error(`Daily plan save failed (${planRes.status})`)
+      }
+
+      router.push('/board')
+      router.refresh()
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save plan')
+      setSaving(false)
+    }
   }
 
   const canGoNext = () => {
@@ -667,7 +727,7 @@ export function DailyPlanningWizard() {
       <div className="relative w-full max-w-3xl bg-[#141414] border border-[#2a2a2a] rounded-2xl p-8 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
         {/* Close / X */}
         <button
-          onClick={handleFinish}
+          onClick={handleClose}
           className="absolute top-4 right-4 text-white/30 hover:text-white/70 transition-colors"
           aria-label="Close wizard"
         >
@@ -741,13 +801,23 @@ export function DailyPlanningWizard() {
               <ChevronRight size={15} />
             </button>
           ) : (
-            <button
-              onClick={handleFinish}
-              className="flex items-center gap-1.5 text-sm bg-[#4ade80] text-black hover:bg-[#22c55e] rounded-lg px-5 py-2 font-medium transition-colors"
-            >
-              Get started
-              <ChevronRight size={15} />
-            </button>
+            <div className="flex items-center gap-3">
+              {saveError && (
+                <span className="text-xs text-red-400">{saveError}</span>
+              )}
+              <button
+                onClick={handleFinish}
+                disabled={saving || planTasks.length === 0}
+                className={`flex items-center gap-1.5 text-sm rounded-lg px-5 py-2 font-medium transition-colors ${
+                  saving || planTasks.length === 0
+                    ? 'bg-[#2a2a2a] text-white/30 cursor-not-allowed'
+                    : 'bg-[#4ade80] text-black hover:bg-[#22c55e]'
+                }`}
+              >
+                {saving ? 'Saving…' : 'Get started'}
+                {!saving && <ChevronRight size={15} />}
+              </button>
+            </div>
           )}
         </div>
       </div>

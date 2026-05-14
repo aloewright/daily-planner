@@ -7,8 +7,6 @@ import { Sunset, Check, ArrowRight } from 'lucide-react'
 import { mapApiTaskToTask, type ApiTask } from '@/lib/mapTask'
 import type { Task } from '@/types/index'
 
-const DEMO_USER_ID = 'cmp1m2r1l0000yz1ib341e9o5'
-
 export default function ShutdownPage() {
   const router = useRouter()
   const today = startOfDay(new Date())
@@ -24,7 +22,7 @@ export default function ShutdownPage() {
     async function fetchTasks() {
       try {
         const res = await fetch(
-          `/api/tasks?startDate=${todayStr}&endDate=${todayStr}&userId=${DEMO_USER_ID}`
+          `/api/tasks?startDate=${todayStr}&endDate=${todayStr}`
         )
         if (!res.ok) return
         const apiTasks: ApiTask[] = await res.json()

@@ -8,8 +8,6 @@ import { mapApiTaskToTask, type ApiTask } from '@/lib/mapTask'
 import type { Task } from '@/types/index'
 import { useEffect } from 'react'
 
-const DEMO_USER_ID = 'cmp1m2r1l0000yz1ib341e9o5'
-
 function SkeletonColumn() {
   return (
     <div className="flex flex-col min-w-[220px] flex-1 animate-pulse">
@@ -44,7 +42,7 @@ export function BoardView() {
     queryKey: ['tasks', startDate, endDate],
     queryFn: async () => {
       const res = await fetch(
-        `/api/tasks?startDate=${startDate}&endDate=${endDate}&userId=${DEMO_USER_ID}`
+        `/api/tasks?startDate=${startDate}&endDate=${endDate}`
       )
       if (!res.ok) throw new Error('Failed to fetch tasks')
       return res.json()
@@ -71,7 +69,6 @@ export function BoardView() {
       body: JSON.stringify({
         title,
         startDate: format(date, 'yyyy-MM-dd'),
-        userId: DEMO_USER_ID,
       }),
     })
     if (!res.ok) return

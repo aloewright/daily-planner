@@ -9,8 +9,6 @@ import { useTasksStore } from '@/store/tasks'
 import { mapApiTaskToTask, type ApiTask } from '@/lib/mapTask'
 import type { Task } from '@/types/index'
 
-const DEMO_USER_ID = 'cmp1m2r1l0000yz1ib341e9o5'
-
 function formatMinutes(m: number): string {
   const h = Math.floor(m / 60)
   const min = m % 60
@@ -112,7 +110,7 @@ export default function TodayPage() {
   const { data: apiTasks, isLoading, error } = useQuery<ApiTask[]>({
     queryKey: ['tasks-today', todayStr],
     queryFn: async () => {
-      const res = await fetch(`/api/tasks?startDate=${todayStr}&endDate=${todayStr}&userId=${DEMO_USER_ID}`)
+      const res = await fetch(`/api/tasks?startDate=${todayStr}&endDate=${todayStr}`)
       if (!res.ok) throw new Error('Failed to fetch tasks')
       return res.json()
     },
@@ -152,7 +150,7 @@ export default function TodayPage() {
       const res = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, startDate: todayStr, userId: DEMO_USER_ID }),
+        body: JSON.stringify({ title, startDate: todayStr }),
       })
       if (res.ok) {
         const apiTask: ApiTask = await res.json()
