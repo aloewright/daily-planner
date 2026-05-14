@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { format, startOfDay, isSameDay } from 'date-fns'
-import { Plus, ArrowUpDown, Check, Clock, Calendar } from 'lucide-react'
+import { Plus, Check } from 'lucide-react'
 import { useState } from 'react'
 import { useTasksStore } from '@/store/tasks'
 import { mapApiTaskToTask, type ApiTask } from '@/lib/mapTask'
@@ -70,20 +70,6 @@ function TaskCardRow({ task, onCompleteToggle }: { task: Task; onCompleteToggle:
           aria-label={task.status === 'done' ? 'Mark incomplete' : 'Mark complete'}
         >
           {task.status === 'done' && <Check size={10} className="text-black" strokeWidth={3} />}
-        </button>
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="text-white/25 hover:text-white/60 transition-colors opacity-0 group-hover:opacity-100"
-          aria-label="Schedule"
-        >
-          <Calendar size={12} strokeWidth={1.75} />
-        </button>
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="text-white/25 hover:text-white/60 transition-colors opacity-0 group-hover:opacity-100"
-          aria-label="Set time"
-        >
-          <Clock size={12} strokeWidth={1.75} />
         </button>
         {task.channel && (
           <span className="ml-auto text-[11px] text-amber-400 font-medium truncate max-w-[80px]">
@@ -228,9 +214,6 @@ export default function TodayPage() {
           >
             <Plus size={13} strokeWidth={2} />
             <span>Add task</span>
-          </button>
-          <button className="text-white/20 hover:text-white/50 transition-colors duration-100" aria-label="Sort">
-            <ArrowUpDown size={12} strokeWidth={1.75} />
           </button>
         </div>
 

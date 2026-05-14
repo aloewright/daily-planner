@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Calendar, Clock, Check } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { useTasksStore } from '@/store/tasks'
 import type { Task } from '@/types/index'
 
@@ -83,24 +83,6 @@ export function TaskCard({ task, onCompleteToggle }: TaskCardProps) {
           {task.status === 'done' && (
             <Check size={10} className="text-black" strokeWidth={3} />
           )}
-        </button>
-
-        {/* Calendar icon */}
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="text-white/25 hover:text-white/60 transition-colors opacity-0 group-hover:opacity-100"
-          aria-label="Schedule"
-        >
-          <Calendar size={12} strokeWidth={1.75} />
-        </button>
-
-        {/* Clock icon */}
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="text-white/25 hover:text-white/60 transition-colors opacity-0 group-hover:opacity-100"
-          aria-label="Set time"
-        >
-          <Clock size={12} strokeWidth={1.75} />
         </button>
 
         {/* Channel badge */}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Target, Layers, Search, Bell, Plus } from 'lucide-react'
 import { SearchPanel } from '@/components/panels/SearchPanel'
@@ -26,6 +26,14 @@ const items: StripItem[] = [
 export function RightIconStrip() {
   const router = useRouter()
   const [activePanel, setActivePanel] = useState<PanelId | null>(null)
+
+  useEffect(() => {
+    function openSearch() {
+      setActivePanel('search')
+    }
+    document.addEventListener('open-search', openSearch)
+    return () => document.removeEventListener('open-search', openSearch)
+  }, [])
 
   const handleClick = useCallback(
     (id: StripItem['id']) => {

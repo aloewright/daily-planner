@@ -7,6 +7,9 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "vars": {
+    "BETTER_AUTH_URL": "https://alex.coffee"
+  },
   "d1_databases": [
     {
       "binding": "DB",

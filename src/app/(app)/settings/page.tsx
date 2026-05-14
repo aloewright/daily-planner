@@ -309,7 +309,14 @@ function ChannelsTab() {
   }
 
   async function updateChannelColor(id: string, color: string) {
+    const prevChannels = channels
     setChannels((prev) => prev.map((c) => (c.id === id ? { ...c, color } : c)))
+    const res = await fetch(`/api/channels/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ color }),
+    })
+    if (!res.ok) setChannels(prevChannels)
   }
 
   if (loading) {

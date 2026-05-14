@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Plus, ArrowUpDown } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { format } from 'date-fns'
 import { TaskCard } from './TaskCard'
 import { useTasksStore } from '@/store/tasks'
@@ -111,9 +111,6 @@ export function DayColumn({ date, tasks, isToday, isLoading = false, onAddTask, 
               {formatMinutes(totalPlannedMinutes)}
             </span>
           )}
-          <button className="text-white/20 hover:text-white/50 transition-colors duration-100" aria-label="Sort">
-            <ArrowUpDown size={12} strokeWidth={1.75} />
-          </button>
         </div>
       </div>
 

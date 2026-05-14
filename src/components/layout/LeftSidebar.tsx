@@ -12,7 +12,6 @@ import {
   Clipboard,
   BookText,
   Archive,
-  UserPlus,
   LayoutGrid,
 } from 'lucide-react'
 
@@ -109,16 +108,6 @@ export function LeftSidebar() {
         ))}
       </nav>
 
-      {/* Bottom invite */}
-      <div className="flex flex-col items-center w-full px-1.5 pb-4">
-        <button
-          className="flex flex-col items-center gap-0.5 w-full py-2 px-1 rounded-md text-white/30 hover:text-white/60 hover:bg-[#1a1a1a] transition-colors duration-100"
-          aria-label="Invite teammates"
-        >
-          <UserPlus size={18} strokeWidth={1.75} />
-          <span className="text-[9px] leading-tight tracking-wide font-medium">Invite</span>
-        </button>
-      </div>
     </aside>
   )
 }

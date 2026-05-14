@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   DndContext,
@@ -30,7 +30,6 @@ import {
   ChevronDown,
   ChevronRight,
   Plus,
-  BarChart2,
   Hash,
   GripVertical,
   X,
@@ -430,8 +429,21 @@ export default function BacklogPage() {
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [activeTask, setActiveTask] = useState<ApiTask | null>(null)
   const [channelFilter, setChannelFilter] = useState<string>('')
+  const [channelMenuOpen, setChannelMenuOpen] = useState(false)
+  const channelMenuRef = useRef<HTMLDivElement>(null)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+
+  useEffect(() => {
+    if (!channelMenuOpen) return
+    function onClick(e: MouseEvent) {
+      if (channelMenuRef.current && !channelMenuRef.current.contains(e.target as Node)) {
+        setChannelMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [channelMenuOpen])
 
   // Fetch backlog tasks
   const { data: backlogTasks = [] } = useQuery<ApiTask[]>({
@@ -516,24 +528,21 @@ export default function BacklogPage() {
         <div className="flex flex-col" style={{ flex: '0 0 60%', minWidth: 0 }}>
           {/* Filter bar */}
           <div className="flex items-center gap-2 px-5 py-3 border-b border-[#2a2a2a]">
-            <button className="flex items-center gap-1.5 bg-[#4ade80]/10 text-[#4ade80] text-xs font-medium px-3 py-1.5 rounded-full border border-[#4ade80]/30 hover:bg-[#4ade80]/20 transition-colors">
+            <div className="flex items-center gap-1.5 bg-[#4ade80]/10 text-[#4ade80] text-xs font-medium px-3 py-1.5 rounded-full border border-[#4ade80]/30">
               All backlog tasks
-            </button>
+            </div>
 
-            {/* Channel filter */}
-            <div className="relative">
+            {/* Channel filter dropdown */}
+            <div className="relative" ref={channelMenuRef}>
               <button
-                className="flex items-center gap-1 text-white/40 hover:text-white/70 px-2 py-1.5 rounded hover:bg-[#1a1a1a] text-xs transition-colors"
-                onClick={() => {
-                  // cycle through channel filter
-                  if (!channelFilter) {
-                    if (channels.length > 0) setChannelFilter(channels[0].id)
-                  } else {
-                    const idx = channels.findIndex((c) => c.id === channelFilter)
-                    if (idx === channels.length - 1) setChannelFilter('')
-                    else setChannelFilter(channels[idx + 1]?.id ?? '')
-                  }
-                }}
+                onClick={() => setChannelMenuOpen((o) => !o)}
+                aria-haspopup="listbox"
+                aria-expanded={channelMenuOpen}
+                className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs transition-colors ${
+                  channelFilter
+                    ? 'text-[#4ade80] hover:bg-[#1a1a1a]'
+                    : 'text-white/40 hover:text-white/70 hover:bg-[#1a1a1a]'
+                }`}
               >
                 <Hash size={13} />
                 <span>
@@ -542,11 +551,44 @@ export default function BacklogPage() {
                     : 'Channel'}
                 </span>
               </button>
+              {channelMenuOpen && (
+                <div className="absolute left-0 top-full mt-1 z-50 min-w-[160px] bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg shadow-xl overflow-hidden">
+                  <button
+                    onClick={() => {
+                      setChannelFilter('')
+                      setChannelMenuOpen(false)
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs transition-colors ${
+                      !channelFilter
+                        ? 'text-[#4ade80] bg-[#222]'
+                        : 'text-white/60 hover:text-white hover:bg-[#222]'
+                    }`}
+                  >
+                    All channels
+                  </button>
+                  {channels.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => {
+                        setChannelFilter(c.id)
+                        setChannelMenuOpen(false)
+                      }}
+                      className={`w-full flex items-center gap-2 text-left px-3 py-2 text-xs transition-colors ${
+                        channelFilter === c.id
+                          ? 'text-[#4ade80] bg-[#222]'
+                          : 'text-white/60 hover:text-white hover:bg-[#222]'
+                      }`}
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: c.color }}
+                      />
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-
-            <button className="text-white/40 hover:text-white/70 p-1.5 rounded hover:bg-[#1a1a1a] transition-colors ml-0.5">
-              <BarChart2 size={14} />
-            </button>
 
             <div className="flex-1" />
 

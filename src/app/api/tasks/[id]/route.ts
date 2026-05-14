@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
+import { createAuth } from '@/lib/auth'
 import { tasks, channels, subtasks, comments, users } from '@/lib/schema'
-import { eq, inArray } from 'drizzle-orm'
-
+import { and, eq, inArray } from 'drizzle-orm'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -11,11 +11,18 @@ function toSqliteText(d: Date): string {
   return d.toISOString().replace('T', ' ').substring(0, 19)
 }
 
-export async function GET(_request: NextRequest, { params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
   const db = getDb()
+  const session = await createAuth(db).api.getSession({ headers: request.headers })
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userId = session.user.id
   const { id } = await params
   try {
-    const [task] = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1)
+    const [task] = await db
+      .select()
+      .from(tasks)
+      .where(and(eq(tasks.id, id), eq(tasks.userId, userId)))
+      .limit(1)
     if (!task) return NextResponse.json({ error: 'Task not found' }, { status: 404 })
 
     const [taskChannel, taskSubtasks, taskComments] = await Promise.all([
@@ -23,10 +30,9 @@ export async function GET(_request: NextRequest, { params }: Params) {
         ? db.select().from(channels).where(eq(channels.id, task.channelId)).limit(1).then((r) => r[0] ?? null)
         : Promise.resolve(null),
       db.select().from(subtasks).where(eq(subtasks.taskId, id)),
-      db.select().from(comments).where(eq(comments.taskId, id)).orderBy(),
+      db.select().from(comments).where(eq(comments.taskId, id)),
     ])
 
-    // Attach user info to comments
     const commentUserIds = [...new Set(taskComments.map((c) => c.userId))]
     const commentUsers = commentUserIds.length > 0
       ? await db.select({
@@ -43,24 +49,29 @@ export async function GET(_request: NextRequest, { params }: Params) {
       subtasks: taskSubtasks,
       comments: taskComments.map((c) => ({ ...c, user: userMap.get(c.userId) ?? null })),
     })
-  } catch {
+  } catch (error) {
+    console.error('[GET /api/tasks/[id]]', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   const db = getDb()
+  const session = await createAuth(db).api.getSession({ headers: request.headers })
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userId = session.user.id
   const { id } = await params
   try {
     const body = await request.json() as {
-      title?: string; description?: string; completed?: boolean; startDate?: string;
+      title?: string; description?: string; completed?: boolean; startDate?: string | null;
       plannedTime?: number; actualTime?: number; channelId?: string | null; priority?: string;
       scheduledTime?: string | null; notes?: string; sortOrder?: number; backlogStatus?: string | null;
+      archived?: boolean; dueDate?: string | null;
     }
     const {
       title, description, completed, startDate, plannedTime,
       actualTime, channelId, priority, scheduledTime, notes,
-      sortOrder, backlogStatus,
+      sortOrder, backlogStatus, archived, dueDate,
     } = body
 
     const data: Partial<typeof tasks.$inferInsert> = {}
@@ -71,6 +82,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       data.completedAt = completed ? toSqliteText(new Date()) : null
     }
     if (startDate !== undefined) data.startDate = startDate ? toSqliteText(new Date(startDate)) : null
+    if (dueDate !== undefined) data.dueDate = dueDate ? toSqliteText(new Date(dueDate)) : null
     if (plannedTime !== undefined) data.plannedTime = plannedTime
     if (actualTime !== undefined) data.actualTime = actualTime
     if (channelId !== undefined) data.channelId = channelId
@@ -79,9 +91,14 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     if (notes !== undefined) data.notes = notes
     if (sortOrder !== undefined) data.sortOrder = sortOrder
     if (backlogStatus !== undefined) data.backlogStatus = backlogStatus
+    if (archived !== undefined) data.archived = archived
     data.updatedAt = toSqliteText(new Date())
 
-    const [updated] = await db.update(tasks).set(data).where(eq(tasks.id, id)).returning()
+    const [updated] = await db
+      .update(tasks)
+      .set(data)
+      .where(and(eq(tasks.id, id), eq(tasks.userId, userId)))
+      .returning()
     if (!updated) return NextResponse.json({ error: 'Task not found' }, { status: 404 })
 
     const [taskChannel, taskSubtasks, taskComments] = await Promise.all([
@@ -104,11 +121,17 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: Params) {
+export async function DELETE(request: NextRequest, { params }: Params) {
   const db = getDb()
+  const session = await createAuth(db).api.getSession({ headers: request.headers })
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userId = session.user.id
   const { id } = await params
   try {
-    const [deleted] = await db.delete(tasks).where(eq(tasks.id, id)).returning()
+    const [deleted] = await db
+      .delete(tasks)
+      .where(and(eq(tasks.id, id), eq(tasks.userId, userId)))
+      .returning()
     if (!deleted) return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     return NextResponse.json({ success: true })
   } catch (error) {

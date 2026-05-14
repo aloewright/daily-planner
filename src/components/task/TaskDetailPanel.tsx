@@ -6,17 +6,17 @@ import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import {
   X,
-  Maximize2,
   MoreHorizontal,
-  MapPin,
   Calendar,
   Plus,
   Play,
   Square,
   Check,
   Hash,
-  Paperclip,
+  Send,
   ChevronDown,
+  Archive,
+  Trash2,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useTasksStore } from '@/store/tasks'
@@ -90,6 +90,7 @@ interface ApiTaskDetail {
   actualTime: number
   completed: boolean
   priority: string
+  archived: boolean
   subtasks: ApiSubtask[]
   comments: ApiComment[]
   createdAt: string
@@ -233,10 +234,12 @@ export function TaskDetailPanel() {
 
   const [showChannelPicker, setShowChannelPicker] = useState(false)
   const [channels, setChannels] = useState<ApiChannel[]>([])
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
 
   const titleInputRef = useRef<HTMLInputElement>(null)
   const commentInputRef = useRef<HTMLInputElement>(null)
   const newSubtaskRef = useRef<HTMLInputElement>(null)
+  const moreMenuRef = useRef<HTMLDivElement>(null)
 
   // ── Tiptap notes editor ──────────────────────────────────────────────────
   const editor = useEditor({
@@ -341,6 +344,39 @@ export function TaskDetailPanel() {
     if (!task) return
     await patchTask({ completed: !task.completed })
   }
+
+  // ── Archive / Delete ─────────────────────────────────────────────────────
+  async function handleArchive() {
+    if (!task) return
+    setMoreMenuOpen(false)
+    await patchTask({ archived: !task.archived })
+    selectTask(null)
+  }
+
+  async function handleDelete() {
+    if (!selectedTaskId) return
+    setMoreMenuOpen(false)
+    const res = await fetch(`/api/tasks/${selectedTaskId}`, { method: 'DELETE' })
+    if (res.ok) {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      selectTask(null)
+      toast.success('Task deleted')
+    } else {
+      toast.error('Failed to delete task')
+    }
+  }
+
+  // Close More menu on outside click
+  useEffect(() => {
+    if (!moreMenuOpen) return
+    function onClick(e: MouseEvent) {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+        setMoreMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [moreMenuOpen])
 
   // ── Timer ────────────────────────────────────────────────────────────────
   async function handleTimerToggle() {
@@ -514,25 +550,39 @@ export function TaskDetailPanel() {
                 )}
               </div>
 
-              {/* Location */}
-              <button className="flex items-center gap-1 px-2 py-1 rounded text-[11px] text-white/40 hover:text-white/60 hover:bg-white/5 transition-colors">
-                <MapPin size={11} />
-                None
-              </button>
-
               {/* Start date */}
-              <button
-                className="flex items-center gap-1 px-2 py-1 rounded text-[11px] text-white/40 hover:text-white/60 hover:bg-white/5 transition-colors"
+              <label
+                className="flex items-center gap-1 px-2 py-1 rounded text-[11px] text-white/40 hover:text-white/60 hover:bg-white/5 transition-colors cursor-pointer"
                 title="Start date"
               >
-                Start Today
-              </button>
+                <Calendar size={11} />
+                {task.startDate ? format(new Date(task.startDate), 'MMM d') : 'Start'}
+                <input
+                  type="date"
+                  value={task.startDate ? format(new Date(task.startDate), 'yyyy-MM-dd') : ''}
+                  onChange={(e) =>
+                    patchTask({ startDate: e.target.value ? e.target.value : null })
+                  }
+                  className="absolute opacity-0 w-0 h-0"
+                />
+              </label>
 
               {/* Due date */}
-              <button className="flex items-center gap-1 px-2 py-1 rounded text-[11px] text-white/40 hover:text-white/60 hover:bg-white/5 transition-colors">
+              <label
+                className="flex items-center gap-1 px-2 py-1 rounded text-[11px] text-white/40 hover:text-white/60 hover:bg-white/5 transition-colors cursor-pointer"
+                title="Due date"
+              >
                 <Calendar size={11} />
                 {task.dueDate ? format(new Date(task.dueDate), 'MMM d') : 'Due'}
-              </button>
+                <input
+                  type="date"
+                  value={task.dueDate ? format(new Date(task.dueDate), 'yyyy-MM-dd') : ''}
+                  onChange={(e) =>
+                    patchTask({ dueDate: e.target.value ? e.target.value : null })
+                  }
+                  className="absolute opacity-0 w-0 h-0"
+                />
+              </label>
 
               {/* Add subtask shortcut */}
               <button
@@ -545,14 +595,34 @@ export function TaskDetailPanel() {
 
               <div className="ml-auto flex items-center gap-1">
                 {/* More options */}
-                <button className="p-1.5 rounded text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors">
-                  <MoreHorizontal size={16} />
-                </button>
-
-                {/* Expand */}
-                <button className="p-1.5 rounded text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors">
-                  <Maximize2 size={15} />
-                </button>
+                <div className="relative" ref={moreMenuRef}>
+                  <button
+                    onClick={() => setMoreMenuOpen((o) => !o)}
+                    aria-haspopup="menu"
+                    aria-expanded={moreMenuOpen}
+                    className="p-1.5 rounded text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors"
+                  >
+                    <MoreHorizontal size={16} />
+                  </button>
+                  {moreMenuOpen && (
+                    <div className="absolute right-0 top-full mt-1 z-50 min-w-[160px] bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg shadow-xl overflow-hidden">
+                      <button
+                        onClick={handleArchive}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/70 hover:text-white hover:bg-[#222] transition-colors"
+                      >
+                        <Archive size={13} />
+                        {task.archived ? 'Unarchive' : 'Archive'}
+                      </button>
+                      <button
+                        onClick={handleDelete}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-[#222] transition-colors"
+                      >
+                        <Trash2 size={13} />
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
 
                 {/* Close */}
                 <button
@@ -698,9 +768,11 @@ export function TaskDetailPanel() {
                     />
                     <button
                       onClick={handleAddComment}
-                      className="text-white/30 hover:text-white/60 transition-colors"
+                      disabled={!newCommentBody.trim()}
+                      className="text-white/30 hover:text-white/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      aria-label="Send comment"
                     >
-                      <Paperclip size={14} />
+                      <Send size={14} />
                     </button>
                   </div>
                 </div>
