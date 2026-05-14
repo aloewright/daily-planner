@@ -28,7 +28,7 @@ export function QuickPanel({ open, title, onClose, children }: QuickPanelProps) 
       )}
       <div
         className={`fixed top-0 right-[45px] h-screen w-[360px] bg-[#141414] border-l border-[#2a2a2a] z-50 flex flex-col overflow-hidden transition-transform duration-200 ${
-          open ? 'translate-x-0' : 'translate-x-full'
+          open ? 'translate-x-0' : 'translate-x-[calc(100%+45px)] pointer-events-none'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
