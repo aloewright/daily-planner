@@ -10,7 +10,6 @@ import {
   Share2,
   ChevronRight,
   ChevronLeft,
-  X,
 } from 'lucide-react'
 import {
   DndContext,
@@ -29,9 +28,21 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import {
+  Modal,
+  Stepper,
+  Button,
+  TextInput,
+  Slider,
+  Textarea,
+  Group,
+  Stack,
+  Box,
+  Text,
+} from '@mantine/core'
 
 // ────────────────────────────────────────────────────────────
-// Types
+// Types & helpers
 // ────────────────────────────────────────────────────────────
 
 interface PlanTask {
@@ -40,10 +51,6 @@ interface PlanTask {
   plannedTime: number  // minutes
   priority: boolean
 }
-
-// ────────────────────────────────────────────────────────────
-// Helpers
-// ────────────────────────────────────────────────────────────
 
 function formatMinutes(m: number): string {
   const h = Math.floor(m / 60)
@@ -61,47 +68,6 @@ function addMinutesToTime(baseHour: number, baseMin: number, addMins: number) {
   return `${displayH}:${String(m).padStart(2, '0')} ${ampm}`
 }
 
-// ────────────────────────────────────────────────────────────
-// Progress Bar
-// ────────────────────────────────────────────────────────────
-
-function ProgressBar({ step }: { step: number }) {
-  return (
-    <div className="flex items-center justify-center gap-3 mb-8">
-      {[1, 2, 3, 4, 5, 6].map((n) => {
-        const done = step > n
-        const current = step === n
-        return (
-          <div key={n} className="flex items-center gap-3">
-            <div
-              className={`
-                w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-semibold flex-shrink-0 transition-all duration-200
-                ${done
-                  ? 'bg-[#4ade80] border-[#4ade80] text-black'
-                  : current
-                    ? 'bg-[#4ade80] border-[#4ade80] text-black'
-                    : 'border-white/20 text-white/30 bg-transparent'
-                }
-              `}
-            >
-              {done ? <Check size={14} strokeWidth={3} /> : n}
-            </div>
-            {n < 6 && (
-              <div
-                className={`w-8 h-px ${step > n ? 'bg-[#4ade80]' : 'bg-white/10'}`}
-              />
-            )}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-// ────────────────────────────────────────────────────────────
-// Time Badge
-// ────────────────────────────────────────────────────────────
-
 function TimeBadge({ minutes }: { minutes: number }) {
   return (
     <span className="text-[11px] font-mono bg-[#2a2a2a] text-white/60 px-2 py-0.5 rounded flex-shrink-0">
@@ -109,10 +75,6 @@ function TimeBadge({ minutes }: { minutes: number }) {
     </span>
   )
 }
-
-// ────────────────────────────────────────────────────────────
-// Planned-for-today panel (right side)
-// ────────────────────────────────────────────────────────────
 
 function PlannedPanel({ tasks }: { tasks: PlanTask[] }) {
   return (
@@ -159,22 +121,23 @@ function Step1({
   return (
     <div className="flex gap-6">
       <div className="flex-1">
-        <h2 className="text-xl font-semibold text-white mb-1">
+        <Text size="lg" fw={600} mb={4}>
           What&apos;s on your plate today?
-        </h2>
-        <p className="text-sm text-white/40 mb-5">
+        </Text>
+        <Text size="sm" c="dimmed" mb="md">
           Add the tasks you need to get done. Press Enter to add each one.
-        </p>
-        <input
-          autoFocus
-          type="text"
+        </Text>
+        <TextInput
+          data-autofocus
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => setValue(e.currentTarget.value)}
           onKeyDown={handleKeyDown}
           placeholder="What do you need to get done today?"
-          className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-[#4ade80]/50 transition-colors"
+          size="md"
         />
-        <p className="text-xs text-white/25 mt-2">Press Enter to add</p>
+        <Text size="xs" c="dimmed" mt={6}>
+          Press Enter to add
+        </Text>
       </div>
       <PlannedPanel tasks={tasks} />
     </div>
@@ -197,30 +160,22 @@ function Step2({
 
   const task = unestimated ?? tasks[0]
 
-  function handleSliderChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const val = Number(e.target.value)
-    setSliderValue(val)
-    if (task) {
-      onEstimate(task.id, val)
-    }
-  }
-
   if (!task) {
     return (
-      <div className="text-center py-10 text-white/40">
+      <Text ta="center" c="dimmed" py="xl">
         No tasks to estimate yet. Go back and add some.
-      </div>
+      </Text>
     )
   }
 
   return (
-    <div className="max-w-xl mx-auto">
-      <h2 className="text-xl font-semibold text-white mb-1">
+    <Box maw={560} mx="auto">
+      <Text size="lg" fw={600} mb={4}>
         Estimate your time
-      </h2>
-      <p className="text-sm text-white/40 mb-6">
+      </Text>
+      <Text size="sm" c="dimmed" mb="lg">
         How long will this take? Drag to set.
-      </p>
+      </Text>
 
       {/* Task card with time badge */}
       <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 mb-6 flex items-center justify-between">
@@ -228,47 +183,45 @@ function Step2({
         <TimeBadge minutes={sliderValue} />
       </div>
 
-      {/* Slider */}
-      <div className="relative">
-        <input
-          type="range"
-          min={0}
-          max={480}
-          step={5}
-          value={sliderValue}
-          onChange={handleSliderChange}
-          className="w-full h-2 rounded-full appearance-none cursor-pointer accent-[#4ade80]"
-          style={{
-            background: `linear-gradient(to right, #4ade80 ${(sliderValue / 480) * 100}%, #2a2a2a ${(sliderValue / 480) * 100}%)`,
-          }}
-        />
-        {/* Markers */}
-        <div className="flex justify-between mt-2 text-[11px] text-white/30 font-mono">
-          <span>0 min</span>
-          <span>6 hr</span>
-          <span>8 hr</span>
-        </div>
-      </div>
+      <Slider
+        value={sliderValue}
+        onChange={(val) => {
+          setSliderValue(val)
+          onEstimate(task.id, val)
+        }}
+        min={0}
+        max={480}
+        step={5}
+        color="accent"
+        size="md"
+        thumbSize={18}
+        marks={[
+          { value: 0, label: '0 min' },
+          { value: 360, label: '6 hr' },
+          { value: 480, label: '8 hr' },
+        ]}
+        label={(v) => formatMinutes(v)}
+      />
 
-      {/* All tasks estimated so far */}
+      {/* Estimated list */}
       {tasks.filter((t) => t.plannedTime > 0).length > 0 && (
-        <div className="mt-6">
-          <p className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-2">
+        <Box mt="xl">
+          <Text size="xs" fw={600} c="dimmed" tt="uppercase" mb={6}>
             Estimated
-          </p>
-          <ul className="space-y-1.5">
+          </Text>
+          <Stack gap={6}>
             {tasks
               .filter((t) => t.plannedTime > 0)
               .map((t) => (
-                <li key={t.id} className="flex items-center justify-between">
-                  <span className="text-sm text-white/60">{t.title}</span>
+                <Group key={t.id} justify="space-between">
+                  <Text size="sm" c="dimmed">{t.title}</Text>
                   <TimeBadge minutes={t.plannedTime} />
-                </li>
+                </Group>
               ))}
-          </ul>
-        </div>
+          </Stack>
+        </Box>
       )}
-    </div>
+    </Box>
   )
 }
 
@@ -277,7 +230,6 @@ function Step2({
 // ────────────────────────────────────────────────────────────
 
 function SimpleCalendar({ tasks }: { tasks: PlanTask[] }) {
-  // Project tasks from 9:00 AM
   let offsetMins = 0
   const blocks = tasks.map((t) => {
     const start = addMinutesToTime(9, 0, offsetMins)
@@ -311,16 +263,10 @@ function SimpleCalendar({ tasks }: { tasks: PlanTask[] }) {
           <p className="text-sm text-white/20 italic">Add tasks to see your day</p>
         )}
       </div>
-      {/* Shutdown time widget */}
       <div className="mt-4 pt-3 border-t border-[#2a2a2a]">
         <div className="flex items-center justify-between">
           <span className="text-xs text-white/40">Shutdown time</span>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-white/70">5:00 PM</span>
-            <a href="#" className="text-xs text-[#4ade80] hover:underline">
-              Add to calendar
-            </a>
-          </div>
+          <span className="text-xs font-mono text-white/70">5:00 PM</span>
         </div>
       </div>
     </div>
@@ -330,14 +276,13 @@ function SimpleCalendar({ tasks }: { tasks: PlanTask[] }) {
 function Step3({ tasks }: { tasks: PlanTask[] }) {
   return (
     <div>
-      <h2 className="text-xl font-semibold text-white mb-1">
+      <Text size="lg" fw={600} mb={4}>
         Fill in your day
-      </h2>
-      <p className="text-sm text-white/40 mb-5">
+      </Text>
+      <Text size="sm" c="dimmed" mb="md">
         Here&apos;s how your tasks fit into the day.
-      </p>
+      </Text>
       <div className="flex gap-4">
-        {/* Task list */}
         <div className="w-56 flex-shrink-0">
           <p className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-2">
             Tasks
@@ -354,7 +299,6 @@ function Step3({ tasks }: { tasks: PlanTask[] }) {
             ))}
           </ul>
         </div>
-        {/* Calendar */}
         <SimpleCalendar tasks={tasks} />
       </div>
     </div>
@@ -443,12 +387,12 @@ function Step4({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-white mb-1">
+      <Text size="lg" fw={600} mb={4}>
         Prioritize your tasks
-      </h2>
-      <p className="text-sm text-white/40 mb-5">
+      </Text>
+      <Text size="sm" c="dimmed" mb="md">
         Drag to reorder. Star your most important tasks.
-      </p>
+      </Text>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -497,12 +441,12 @@ function Step5({ tasks }: { tasks: PlanTask[] }) {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-white mb-1">
+      <Text size="lg" fw={600} mb={4}>
         Your schedule
-      </h2>
-      <p className="text-sm text-white/40 mb-5">
+      </Text>
+      <Text size="sm" c="dimmed" mb="md">
         Tasks auto-projected from 9:00 AM.
-      </p>
+      </Text>
       <div className="space-y-2">
         {blocks.map((b) => (
           <div
@@ -517,9 +461,9 @@ function Step5({ tasks }: { tasks: PlanTask[] }) {
           </div>
         ))}
         {blocks.length === 0 && (
-          <p className="text-sm text-white/20 italic text-center py-8">
+          <Text ta="center" c="dimmed" py="lg" fs="italic">
             Add tasks to see your schedule
-          </p>
+          </Text>
         )}
       </div>
     </div>
@@ -542,18 +486,17 @@ function Step6({
   onShare: () => void
 }) {
   return (
-    <div className="max-w-xl mx-auto">
-      <h2 className="text-xl font-semibold text-white mb-1">
+    <Box maw={560} mx="auto">
+      <Text size="lg" fw={600} mb={4}>
         Planned for today
-      </h2>
-      <p className="text-sm text-white/40 mb-5">
+      </Text>
+      <Text size="sm" c="dimmed" mb="md">
         Your daily plan is ready. Review and share it.
-      </p>
+      </Text>
 
-      {/* Task bullet list */}
       <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4 mb-4">
         {tasks.length === 0 ? (
-          <p className="text-sm text-white/30 italic">No tasks planned</p>
+          <Text size="sm" c="dimmed" fs="italic">No tasks planned</Text>
         ) : (
           <ul className="space-y-1.5">
             {tasks.map((t) => (
@@ -574,35 +517,39 @@ function Step6({
         )}
       </div>
 
-      {/* Obstacles textarea */}
-      <div className="mb-5">
-        <label className="text-xs font-semibold text-white/40 uppercase tracking-widest block mb-2">
-          Obstacles in my way
-        </label>
-        <textarea
-          value={obstacles}
-          onChange={(e) => onObstaclesChange(e.target.value)}
-          placeholder="What might get in your way today?"
-          rows={3}
-          className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-[#4ade80]/50 transition-colors resize-none"
-        />
-      </div>
+      <Textarea
+        label="Obstacles in my way"
+        value={obstacles}
+        onChange={(e) => onObstaclesChange(e.currentTarget.value)}
+        placeholder="What might get in your way today?"
+        minRows={3}
+        autosize
+        mb="md"
+      />
 
-      {/* Share button */}
-      <button
+      <Button
+        variant="default"
+        leftSection={<Share2 size={14} />}
         onClick={onShare}
-        className="flex items-center gap-2 text-sm text-white/60 hover:text-white/90 border border-[#2a2a2a] rounded-lg px-4 py-2 transition-colors hover:border-[#4a4a4a]"
       >
-        <Share2 size={14} />
         Share plan
-      </button>
-    </div>
+      </Button>
+    </Box>
   )
 }
 
 // ────────────────────────────────────────────────────────────
 // Main Wizard
 // ────────────────────────────────────────────────────────────
+
+const STEP_LABELS = [
+  'Add tasks',
+  'Estimate',
+  'Fill day',
+  'Prioritize',
+  'Schedule',
+  'Review',
+]
 
 export function DailyPlanningWizard() {
   const router = useRouter()
@@ -656,8 +603,6 @@ export function DailyPlanningWizard() {
     try {
       const todayStr = format(new Date(), 'yyyy-MM-dd')
 
-      // Calculate scheduledTime for each task starting at 09:00 with each task
-      // taking its plannedTime (or 30 min default).
       let offsetMins = 0
       const tasksToCreate = planTasks.map((t, i) => {
         const startMins = 9 * 60 + offsetMins
@@ -674,7 +619,6 @@ export function DailyPlanningWizard() {
         }
       })
 
-      // POST each task; collect any failures
       const results = await Promise.all(
         tasksToCreate.map((task) =>
           fetch('/api/tasks', {
@@ -711,116 +655,109 @@ export function DailyPlanningWizard() {
     return true
   }
 
-  const stepTitles = [
-    'Add tasks',
-    'Estimate time',
-    'Fill your day',
-    'Prioritize',
-    'Schedule',
-    'Review & share',
-  ]
-
   return (
-    /* Full-screen overlay */
-    <div className="fixed inset-0 z-50 bg-[#0f0f0f]/90 flex items-center justify-center p-4">
-      {/* Modal card */}
-      <div className="relative w-full max-w-3xl bg-[#141414] border border-[#2a2a2a] rounded-2xl p-8 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
-        {/* Close / X */}
-        <button
-          onClick={handleClose}
-          className="absolute top-4 right-4 text-white/30 hover:text-white/70 transition-colors"
-          aria-label="Close wizard"
-        >
-          <X size={18} />
-        </button>
+    <Modal
+      opened
+      onClose={handleClose}
+      size="xl"
+      centered
+      withCloseButton
+      closeOnClickOutside={false}
+      closeOnEscape
+      trapFocus
+      returnFocus
+      overlayProps={{ backgroundOpacity: 0.65, blur: 2 }}
+      title={
+        <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.15em' }}>
+          Daily planning
+        </Text>
+      }
+      styles={{
+        body: { padding: '1.25rem 1.5rem 1.5rem' },
+      }}
+    >
+      <Stepper
+        active={step - 1}
+        onStepClick={(idx) => {
+          // Only allow jumping back, or forward when canGoNext from current step
+          if (idx + 1 <= step) setStep(idx + 1)
+        }}
+        size="xs"
+        color="accent"
+        mb="xl"
+      >
+        {STEP_LABELS.map((label) => (
+          <Stepper.Step key={label} label={label} />
+        ))}
+      </Stepper>
 
-        {/* Step label */}
-        <p className="text-xs font-semibold text-white/30 uppercase tracking-widest text-center mb-2">
-          Step {step} of 6 — {stepTitles[step - 1]}
-        </p>
+      <Box mih={320}>
+        {step === 1 && <Step1 tasks={planTasks} onAddTask={addTask} />}
+        {step === 2 && <Step2 tasks={planTasks} onEstimate={setEstimate} />}
+        {step === 3 && <Step3 tasks={planTasks} />}
+        {step === 4 && (
+          <Step4
+            tasks={planTasks}
+            onReorder={setPlanTasks}
+            onTogglePriority={togglePriority}
+          />
+        )}
+        {step === 5 && <Step5 tasks={planTasks} />}
+        {step === 6 && (
+          <Step6
+            tasks={planTasks}
+            obstacles={obstacles}
+            onObstaclesChange={setObstacles}
+            onShare={handleShare}
+          />
+        )}
+      </Box>
 
-        {/* Progress bar */}
-        <ProgressBar step={step} />
+      <Group
+        justify="space-between"
+        pt="md"
+        mt="lg"
+        style={{ borderTop: '1px solid #2a2a2a' }}
+      >
+        {step > 1 ? (
+          <Button
+            variant="default"
+            leftSection={<ChevronLeft size={15} />}
+            onClick={() => setStep((s) => s - 1)}
+          >
+            Previous
+          </Button>
+        ) : (
+          <span />
+        )}
 
-        {/* Step content */}
-        <div className="flex-1 overflow-y-auto pr-1">
-          {step === 1 && (
-            <Step1 tasks={planTasks} onAddTask={addTask} />
-          )}
-          {step === 2 && (
-            <Step2 tasks={planTasks} onEstimate={setEstimate} />
-          )}
-          {step === 3 && (
-            <Step3 tasks={planTasks} />
-          )}
-          {step === 4 && (
-            <Step4
-              tasks={planTasks}
-              onReorder={setPlanTasks}
-              onTogglePriority={togglePriority}
-            />
-          )}
-          {step === 5 && (
-            <Step5 tasks={planTasks} />
-          )}
-          {step === 6 && (
-            <Step6
-              tasks={planTasks}
-              obstacles={obstacles}
-              onObstaclesChange={setObstacles}
-              onShare={handleShare}
-            />
-          )}
-        </div>
-
-        {/* Navigation buttons */}
-        <div className="flex items-center justify-between pt-6 mt-6 border-t border-[#2a2a2a]">
-          {step > 1 ? (
-            <button
-              onClick={() => setStep((s) => s - 1)}
-              className="flex items-center gap-1.5 text-sm text-white/60 hover:text-white border border-[#2a2a2a] hover:border-[#4a4a4a] rounded-lg px-4 py-2 transition-colors"
+        {step < 6 ? (
+          <Button
+            color="accent"
+            rightSection={<ChevronRight size={15} />}
+            onClick={() => setStep((s) => s + 1)}
+            disabled={!canGoNext()}
+          >
+            Next
+          </Button>
+        ) : (
+          <Group gap="md">
+            {saveError && (
+              <Text size="xs" c="red">{saveError}</Text>
+            )}
+            <Button
+              color="accent"
+              rightSection={saving ? undefined : <ChevronRight size={15} />}
+              onClick={handleFinish}
+              loading={saving}
+              disabled={planTasks.length === 0}
+              leftSection={!saving && planTasks.length > 0 ? <Check size={15} /> : undefined}
             >
-              <ChevronLeft size={15} />
-              Previous
-            </button>
-          ) : (
-            <div />
-          )}
-
-          {step < 6 ? (
-            <button
-              onClick={() => setStep((s) => s + 1)}
-              disabled={!canGoNext()}
-              className={`flex items-center gap-1.5 text-sm rounded-lg px-5 py-2 font-medium transition-all ${
-                canGoNext()
-                  ? 'bg-[#4ade80] text-black hover:bg-[#22c55e]'
-                  : 'bg-[#2a2a2a] text-white/30 cursor-not-allowed'
-              }`}
-            >
-              Next
-              <ChevronRight size={15} />
-            </button>
-          ) : (
-            <div className="flex items-center gap-3">
-              {saveError && (
-                <span className="text-xs text-red-400">{saveError}</span>
-              )}
-              <button
-                onClick={handleFinish}
-                disabled={saving || planTasks.length === 0}
-                className={`flex items-center gap-1.5 text-sm rounded-lg px-5 py-2 font-medium transition-colors ${
-                  saving || planTasks.length === 0
-                    ? 'bg-[#2a2a2a] text-white/30 cursor-not-allowed'
-                    : 'bg-[#4ade80] text-black hover:bg-[#22c55e]'
-                }`}
-              >
-                {saving ? 'Saving…' : 'Get started'}
-                {!saving && <ChevronRight size={15} />}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+              {saving ? 'Saving…' : 'Get started'}
+            </Button>
+          </Group>
+        )}
+      </Group>
+    </Modal>
   )
 }
