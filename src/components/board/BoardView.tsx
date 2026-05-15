@@ -107,13 +107,17 @@ export function BoardView() {
     const task = tasks.find((t) => t.id === taskId)
     if (!task) return
 
-    // No-op if dropped on the same day
-    if (task.scheduledDate && isSameDay(new Date(task.scheduledDate), new Date(targetDate))) {
-      return
-    }
+    // No-op if dropped on the same day. Compare as local 'yyyy-MM-dd' strings —
+    // `new Date('yyyy-MM-dd')` parses as UTC midnight which shifts the day in
+    // negative-UTC timezones (e.g. PDT) and breaks isSameDay.
+    const taskDateStr = task.scheduledDate ? format(task.scheduledDate, 'yyyy-MM-dd') : null
+    if (taskDateStr === targetDate) return
 
-    // Optimistic update
-    updateTask(taskId, { scheduledDate: new Date(targetDate) })
+    // Optimistic update — parse target as local midnight so the new date keeps
+    // the calendar day the user dropped onto.
+    const [y, m, d] = targetDate.split('-').map(Number)
+    const localTarget = new Date(y, m - 1, d)
+    updateTask(taskId, { scheduledDate: localTarget })
 
     const res = await fetch(`/api/tasks/${taskId}`, {
       method: 'PATCH',
