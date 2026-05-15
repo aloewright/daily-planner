@@ -24,12 +24,12 @@ export function TopBar() {
   const email = session?.user?.email
 
   return (
-    <header className="flex items-center justify-between h-12 px-4 bg-[#141414] border-b border-[--color-border] flex-shrink-0">
+    <header className="flex items-center justify-between h-12 px-4 bg-[#141414] border-b border-(--color-border) flex-shrink-0">
       {/* Left controls */}
       <div className="flex items-center gap-2">
         <button
           onClick={() => router.push('/today')}
-          className="px-3 py-1.5 text-xs font-medium text-white/70 border border-[--color-border] rounded-md hover:text-white hover:border-white/30 transition-colors duration-100"
+          className="px-3 py-1.5 text-xs font-medium text-white/70 border border-(--color-border) rounded-md hover:text-white hover:border-white/30 transition-colors duration-100"
         >
           Today
         </button>
@@ -43,7 +43,7 @@ export function TopBar() {
               aria-label="Account menu"
               className="rounded-full"
             >
-              <div className="w-7 h-7 rounded-full bg-[--color-amber] flex items-center justify-center flex-shrink-0">
+              <div className="w-7 h-7 rounded-full bg-(--color-amber) flex items-center justify-center flex-shrink-0">
                 <span className="text-[11px] font-bold text-black leading-none">{initial}</span>
               </div>
             </UnstyledButton>

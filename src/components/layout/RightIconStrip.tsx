@@ -53,7 +53,7 @@ export function RightIconStrip() {
 
   return (
     <>
-      <aside className="flex flex-col items-center w-[45px] h-screen bg-[#141414] border-l border-[--color-border] flex-shrink-0 py-3 gap-1">
+      <aside className="flex flex-col items-center w-[45px] h-screen bg-[#141414] border-l border-(--color-border) flex-shrink-0 py-3 gap-1">
         {items.map(({ id, icon: Icon, label }) => {
           const active =
             (id === 'search' || id === 'objectives' || id === 'notifications') &&
@@ -69,7 +69,7 @@ export function RightIconStrip() {
                 relative flex items-center justify-center w-8 h-8 rounded-md
                 transition-colors duration-100
                 ${active
-                  ? 'text-[--color-accent] bg-[#1f1f1f]'
+                  ? 'text-(--color-accent) bg-[#1f1f1f]'
                   : 'text-white/40 hover:text-white/70 hover:bg-[#222]'
                 }
               `}

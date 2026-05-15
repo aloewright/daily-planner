@@ -44,7 +44,7 @@ function NavButton({ item, active }: { item: NavItem; active: boolean }) {
         relative flex flex-col items-center gap-0.5 w-full py-2 px-1 rounded-md
         transition-colors duration-100
         ${active
-          ? 'text-[--color-accent] bg-[#1f1f1f]'
+          ? 'text-(--color-accent) bg-[#1f1f1f]'
           : 'text-white/40 hover:text-white/70 hover:bg-[#1a1a1a]'
         }
       `}
@@ -54,7 +54,7 @@ function NavButton({ item, active }: { item: NavItem; active: boolean }) {
         {item.label}
       </span>
       {item.greenDot && (
-        <span className="absolute top-1.5 right-2.5 w-1.5 h-1.5 rounded-full bg-[--color-accent]" />
+        <span className="absolute top-1.5 right-2.5 w-1.5 h-1.5 rounded-full bg-(--color-accent)" />
       )}
     </Link>
   )
@@ -77,10 +77,10 @@ export function LeftSidebar() {
   }
 
   return (
-    <aside className="flex flex-col items-center w-[65px] h-screen bg-[#141414] border-r border-[--color-border] flex-shrink-0 overflow-hidden">
+    <aside className="flex flex-col items-center w-[65px] h-screen bg-[#141414] border-r border-(--color-border) flex-shrink-0 overflow-hidden">
       {/* Logo */}
       <div className="flex items-center justify-center w-full py-4">
-        <div className="w-8 h-8 rounded-full bg-[--color-amber] flex items-center justify-center flex-shrink-0">
+        <div className="w-8 h-8 rounded-full bg-(--color-amber) flex items-center justify-center flex-shrink-0">
           <Coffee size={16} strokeWidth={2.25} className="text-[#f6f6f6]" />
         </div>
       </div>
