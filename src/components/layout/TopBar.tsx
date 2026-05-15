@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { LogOut, Settings } from 'lucide-react'
-import { Menu, UnstyledButton, Avatar } from '@mantine/core'
+import { Menu, UnstyledButton } from '@mantine/core'
 import { authClient } from '@/lib/auth-client'
 
 export function TopBar() {
@@ -43,9 +43,9 @@ export function TopBar() {
               aria-label="Account menu"
               className="rounded-full"
             >
-              <Avatar size={28} radius="xl" color="surface.6" variant="filled">
-                <span className="text-[10px] font-semibold text-white/80">{initial}</span>
-              </Avatar>
+              <div className="w-7 h-7 rounded-full bg-[--color-amber] flex items-center justify-center flex-shrink-0">
+                <span className="text-[11px] font-bold text-black leading-none">{initial}</span>
+              </div>
             </UnstyledButton>
           </Menu.Target>
 
