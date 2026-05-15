@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { Check } from 'lucide-react'
+import { useDraggable } from '@dnd-kit/core'
+import { CSS } from '@dnd-kit/utilities'
 import { useTasksStore } from '@/store/tasks'
 import type { Task } from '@/types/index'
 
@@ -14,14 +16,22 @@ function formatMinutes(m: number): string {
 interface TaskCardProps {
   task: Task
   onCompleteToggle: (task: Task) => void
+  /** When true, render a static card (no drag wiring) — used inside DragOverlay */
+  asOverlay?: boolean
 }
 
-export function TaskCard({ task, onCompleteToggle }: TaskCardProps) {
+export function TaskCard({ task, onCompleteToggle, asOverlay = false }: TaskCardProps) {
   const selectTask = useTasksStore((s) => s.selectTask)
   const [completing, setCompleting] = useState(false)
 
   const subtaskCount = task.subtasks?.length ?? 0
   const plannedTime = task.estimatedMinutes ?? 0
+
+  const draggable = useDraggable({
+    id: task.id,
+    data: { task },
+    disabled: asOverlay,
+  })
 
   async function handleComplete(e: React.MouseEvent) {
     e.stopPropagation()
@@ -34,10 +44,20 @@ export function TaskCard({ task, onCompleteToggle }: TaskCardProps) {
     }
   }
 
+  const style = !asOverlay && draggable.transform
+    ? { transform: CSS.Translate.toString(draggable.transform), opacity: draggable.isDragging ? 0.4 : 1 }
+    : undefined
+
   return (
     <div
-      onClick={() => selectTask(task.id)}
-      className="group relative bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 cursor-pointer hover:bg-[#1f1f1f] hover:border-[#333333] transition-colors duration-100"
+      ref={asOverlay ? undefined : draggable.setNodeRef}
+      style={style}
+      {...(asOverlay ? {} : draggable.attributes)}
+      {...(asOverlay ? {} : draggable.listeners)}
+      onClick={() => !asOverlay && selectTask(task.id)}
+      className={`group relative bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 cursor-pointer hover:bg-[#1f1f1f] hover:border-[#333333] transition-colors duration-100 ${
+        asOverlay ? 'shadow-2xl ring-1 ring-[#4ade80]/40' : ''
+      }`}
     >
       {/* Top row: scheduled time + planned time badge */}
       <div className="flex items-center justify-between mb-1.5">

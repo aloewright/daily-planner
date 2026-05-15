@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Plus } from 'lucide-react'
 import { format } from 'date-fns'
+import { useDroppable } from '@dnd-kit/core'
 import { TaskCard } from './TaskCard'
 import { useTasksStore } from '@/store/tasks'
 import type { Task } from '@/types/index'
@@ -28,6 +29,9 @@ export function DayColumn({ date, tasks, isToday, isLoading = false, onAddTask, 
   const [submitting, setSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const addTask = useTasksStore((s) => s.addTask)
+
+  const dropId = format(date, 'yyyy-MM-dd')
+  const { setNodeRef, isOver } = useDroppable({ id: dropId })
 
   // Listen for the 'add-task' keyboard shortcut event — only trigger for today's column
   useEffect(() => {
@@ -134,8 +138,13 @@ export function DayColumn({ date, tasks, isToday, isLoading = false, onAddTask, 
         </div>
       )}
 
-      {/* Task list */}
-      <div className="flex flex-col gap-2 flex-1">
+      {/* Task list (drop target) */}
+      <div
+        ref={setNodeRef}
+        className={`flex flex-col gap-2 flex-1 rounded-lg transition-colors ${
+          isOver ? 'bg-[#4ade80]/5 ring-1 ring-[#4ade80]/30' : ''
+        }`}
+      >
         {isLoading ? (
           <>
             {[1, 2, 3].map((i) => (

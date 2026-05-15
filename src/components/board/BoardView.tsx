@@ -1,26 +1,22 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { startOfDay, addDays, subDays, format, isSameDay } from 'date-fns'
+import {
+  DndContext,
+  DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
 import { DayColumn } from './DayColumn'
+import { TaskCard } from './TaskCard'
 import { useTasksStore } from '@/store/tasks'
 import { mapApiTaskToTask, type ApiTask } from '@/lib/mapTask'
 import type { Task } from '@/types/index'
-import { useEffect } from 'react'
-
-function SkeletonColumn() {
-  return (
-    <div className="flex flex-col min-w-[220px] flex-1 animate-pulse">
-      <div className="h-5 bg-[#2a2a2a] rounded w-20 mb-1" />
-      <div className="h-0.5 bg-[#2a2a2a] rounded mb-3" />
-      <div className="flex flex-col gap-2">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-20 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg" />
-        ))}
-      </div>
-    </div>
-  )
-}
 
 export function BoardView() {
   const today = startOfDay(new Date())
@@ -37,12 +33,17 @@ export function BoardView() {
 
   const { setTasks, tasks, addTask: addToStore, updateTask } = useTasksStore()
   const queryClient = useQueryClient()
+  const [activeTask, setActiveTask] = useState<Task | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  )
 
   const { data: apiTasks, isLoading, error } = useQuery<ApiTask[]>({
     queryKey: ['tasks', startDate, endDate],
     queryFn: async () => {
       const res = await fetch(
-        `/api/tasks?startDate=${startDate}&endDate=${endDate}`
+        `/api/tasks?startDate=${startDate}&endDate=${endDate}`,
       )
       if (!res.ok) throw new Error('Failed to fetch tasks')
       return res.json()
@@ -88,6 +89,45 @@ export function BoardView() {
     updateTask(task.id, { status: updated.status })
   }
 
+  function handleDragStart(event: DragStartEvent) {
+    const draggedId = String(event.active.id)
+    const task = tasks.find((t) => t.id === draggedId) ?? null
+    setActiveTask(task)
+  }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    setActiveTask(null)
+    const { active, over } = event
+    if (!over) return
+
+    const taskId = String(active.id)
+    const targetDate = String(over.id) // 'yyyy-MM-dd'
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) return
+
+    const task = tasks.find((t) => t.id === taskId)
+    if (!task) return
+
+    // No-op if dropped on the same day
+    if (task.scheduledDate && isSameDay(new Date(task.scheduledDate), new Date(targetDate))) {
+      return
+    }
+
+    // Optimistic update
+    updateTask(taskId, { scheduledDate: new Date(targetDate) })
+
+    const res = await fetch(`/api/tasks/${taskId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ startDate: targetDate }),
+    })
+
+    if (!res.ok) {
+      // Revert on failure
+      updateTask(taskId, { scheduledDate: task.scheduledDate })
+    }
+    queryClient.invalidateQueries({ queryKey: ['tasks'] })
+  }
+
   if (error) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -97,21 +137,27 @@ export function BoardView() {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* Board columns */}
-      <div className="flex gap-4 flex-1 overflow-x-auto px-6 py-6 min-h-0">
-        {days.map((date) => (
-          <DayColumn
-            key={date.toISOString()}
-            date={date}
-            tasks={getTasksForDay(date)}
-            isToday={isSameDay(date, today)}
-            isLoading={isLoading}
-            onAddTask={handleAddTask}
-            onCompleteToggle={handleCompleteToggle}
-          />
-        ))}
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <div className="flex flex-col h-full overflow-hidden">
+        <div className="flex gap-4 flex-1 overflow-x-auto px-6 py-6 min-h-0">
+          {days.map((date) => (
+            <DayColumn
+              key={date.toISOString()}
+              date={date}
+              tasks={getTasksForDay(date)}
+              isToday={isSameDay(date, today)}
+              isLoading={isLoading}
+              onAddTask={handleAddTask}
+              onCompleteToggle={handleCompleteToggle}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+      <DragOverlay>
+        {activeTask ? (
+          <TaskCard task={activeTask} onCompleteToggle={handleCompleteToggle} asOverlay />
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   )
 }
