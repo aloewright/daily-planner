@@ -12,7 +12,6 @@ import {
   Clipboard,
   BookText,
   Archive,
-  LayoutGrid,
 } from 'lucide-react'
 
 interface NavItem {
@@ -35,10 +34,6 @@ const weeklyItems: NavItem[] = [
   { icon: Clipboard, label: 'Plan', href: '/weekly/plan' },
   { icon: BookText, label: 'Review', href: '/weekly/review' },
   { icon: Archive, label: 'Backlog', href: '/backlog' },
-]
-
-const otherItems: NavItem[] = [
-  { icon: LayoutGrid, label: 'Apps', href: '/apps' },
 ]
 
 function NavButton({ item, active }: { item: NavItem; active: boolean }) {
@@ -86,7 +81,7 @@ export function LeftSidebar() {
       {/* Logo */}
       <div className="flex items-center justify-center w-full py-4">
         <div className="w-8 h-8 rounded-full bg-[--color-amber] flex items-center justify-center flex-shrink-0">
-          <Coffee size={16} strokeWidth={2.25} className="text-black" />
+          <Coffee size={16} strokeWidth={2.25} className="text-[#f6f6f6]" />
         </div>
       </div>
 
@@ -99,11 +94,6 @@ export function LeftSidebar() {
 
         <SectionLabel label="Weekly" />
         {weeklyItems.map((item) => (
-          <NavButton key={item.href} item={item} active={isActive(item.href)} />
-        ))}
-
-        <SectionLabel label="Other" />
-        {otherItems.map((item) => (
           <NavButton key={item.href} item={item} active={isActive(item.href)} />
         ))}
       </nav>
