@@ -2,7 +2,9 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Toaster } from 'react-hot-toast'
+import { MantineProvider } from '@mantine/core'
+import { Notifications } from '@mantine/notifications'
+import { mantineTheme } from '@/lib/mantine-theme'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -17,18 +19,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   )
 
   return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-      <Toaster
-        position="bottom-right"
-        toastOptions={{
-          style: {
-            background: '#1a1a1a',
-            color: '#ffffff',
-            border: '1px solid #2a2a2a',
-          },
-        }}
-      />
-    </QueryClientProvider>
+    <MantineProvider theme={mantineTheme} defaultColorScheme="dark" forceColorScheme="dark">
+      <QueryClientProvider client={queryClient}>
+        <Notifications position="bottom-right" />
+        {children}
+      </QueryClientProvider>
+    </MantineProvider>
   )
 }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Sun, Moon, ArrowLeft, ArrowRight, Check } from 'lucide-react'
+import { Sun, Moon, ArrowLeft, ArrowRight, Check, Coffee } from 'lucide-react'
 
 const TOTAL_SCREENS = 7
 
@@ -51,7 +51,7 @@ function WelcomeScreen({ onNext }: { onNext: () => void }) {
   return (
     <div className="flex flex-col items-center text-center gap-8">
       <div className="w-16 h-16 rounded-2xl bg-[#f59e0b] flex items-center justify-center flex-shrink-0">
-        <span className="text-black text-2xl font-bold">D</span>
+        <Coffee size={32} strokeWidth={2.25} className="text-black" />
       </div>
       <div className="flex flex-col gap-3">
         <h1 className="text-3xl font-bold text-white leading-tight">

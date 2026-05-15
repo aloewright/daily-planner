@@ -18,7 +18,7 @@ import {
   Archive,
   Trash2,
 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import toast from '@/lib/toast'
 import { useTasksStore } from '@/store/tasks'
 import { useTask } from '@/hooks/useTask'
 import { useQueryClient } from '@tanstack/react-query'

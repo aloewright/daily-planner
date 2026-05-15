@@ -86,7 +86,7 @@ export function LeftSidebar() {
       {/* Logo */}
       <div className="flex items-center justify-center w-full py-4">
         <div className="w-8 h-8 rounded-full bg-[--color-amber] flex items-center justify-center flex-shrink-0">
-          <span className="text-black text-xs font-bold leading-none">D</span>
+          <Coffee size={16} strokeWidth={2.25} className="text-black" />
         </div>
       </div>
 
