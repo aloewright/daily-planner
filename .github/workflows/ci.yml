@@ -5,6 +5,7 @@ on:
     branches: [main, 'build/**', 'feat/**', 'fix/**']
   pull_request:
     branches: [main, 'build/initial-app']
+    types: [opened, synchronize, reopened, ready_for_review]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
