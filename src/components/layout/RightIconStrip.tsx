@@ -40,7 +40,7 @@ export function RightIconStrip() {
   }
 
   return (
-    <aside className="flex flex-col items-center w-[45px] h-screen bg-[#141414] border-l border-[--color-border] flex-shrink-0 py-3 gap-1">
+    <aside className="hidden md:flex flex-col items-center w-[45px] h-screen bg-[#141414] border-l border-[--color-border] flex-shrink-0 py-3 gap-1">
       {items.map(({ id, icon: Icon, label, redDot }) => {
         const active = activePanel === id
         return (

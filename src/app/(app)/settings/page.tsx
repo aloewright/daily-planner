@@ -66,12 +66,12 @@ function SettingRow({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex items-center justify-between py-4 border-b border-[#2a2a2a] last:border-b-0">
-      <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-4 border-b border-[#2a2a2a] last:border-b-0">
+      <div className="flex flex-col gap-0.5 min-w-0">
         <span className="text-sm text-white/80">{label}</span>
         {description && <span className="text-xs text-white/35">{description}</span>}
       </div>
-      <div className="flex items-center gap-2 ml-6 flex-shrink-0">{children}</div>
+      <div className="flex items-center gap-2 sm:ml-6 flex-shrink-0 flex-wrap">{children}</div>
     </div>
   )
 }
@@ -402,12 +402,12 @@ function AITab({
   return (
     <div className="flex flex-col">
       {items.map((item) => (
-        <div key={item.key} className="flex items-center justify-between py-4 border-b border-[#2a2a2a] last:border-b-0">
-          <div className="flex flex-col gap-0.5">
+        <div key={item.key} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-4 border-b border-[#2a2a2a] last:border-b-0">
+          <div className="flex flex-col gap-0.5 min-w-0">
             <span className="text-sm text-white/80">{item.label}</span>
             <span className="text-xs text-white/35">{item.description}</span>
           </div>
-          <div className="ml-6 flex-shrink-0">
+          <div className="sm:ml-6 flex-shrink-0">
             <Toggle
               checked={settings[item.key] as boolean}
               onChange={(v) => onChange(item.key, v)}
@@ -465,17 +465,17 @@ export default function SettingsPage() {
 
   return (
     <div className="flex h-full bg-[#0f0f0f] overflow-auto">
-      <div className="flex gap-8 w-full max-w-4xl mx-auto px-8 py-8">
-        {/* Left tab sidebar */}
-        <aside className="flex flex-col gap-1 w-48 flex-shrink-0 pt-1">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/25 px-3 mb-2">
+      <div className="flex flex-col md:flex-row gap-6 md:gap-8 w-full max-w-4xl mx-auto px-4 sm:px-8 py-6 md:py-8">
+        {/* Tab nav — vertical sidebar on desktop, horizontal scroll on mobile */}
+        <aside className="flex md:flex-col gap-1 md:w-48 flex-shrink-0 md:pt-1 -mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto md:overflow-visible">
+          <p className="hidden md:block text-[10px] font-semibold uppercase tracking-widest text-white/25 px-3 mb-2">
             Settings
           </p>
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`text-left px-3 py-2 rounded-md text-sm transition-colors ${
+              className={`text-left whitespace-nowrap px-3 py-2 min-h-[44px] md:min-h-0 rounded-md text-sm transition-colors flex-shrink-0 ${
                 activeTab === tab.id
                   ? 'bg-[#1f1f1f] text-white font-medium'
                   : 'text-white/45 hover:text-white/70 hover:bg-[#1a1a1a]'
@@ -503,7 +503,7 @@ export default function SettingsPage() {
             )}
           </div>
 
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-6 py-2">
+          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 sm:px-6 py-2">
             {activeTab === 'general' && (
               <GeneralTab settings={settings} onChange={handleChange} />
             )}

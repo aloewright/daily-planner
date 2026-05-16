@@ -232,7 +232,7 @@ export default function FocusPage() {
       )}
 
       {/* ── Top bar: mode tabs ───────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-[#1e1e1e] flex-shrink-0">
+      <div className="flex items-center justify-between px-4 sm:px-6 pt-5 pb-3 border-b border-[#1e1e1e] flex-shrink-0">
         <div className="flex items-center gap-1 bg-[#1a1a1a] rounded-lg p-1">
           <button
             onClick={() => handleModeSwitch('focus')}
@@ -264,7 +264,7 @@ export default function FocusPage() {
       </div>
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-8 px-6 pb-8">
+      <div className="flex-1 flex flex-col items-center justify-center gap-6 sm:gap-8 px-4 sm:px-6 py-6 sm:pb-8">
 
         {/* ── Task selector ──────────────────────────────────────────────── */}
         <div className="w-full max-w-lg relative">

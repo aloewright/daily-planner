@@ -147,9 +147,9 @@ export default function WeeklyReviewPage() {
 
   return (
     <div className="flex flex-col h-full bg-[#0f0f0f] overflow-auto">
-      <div className="flex flex-col gap-8 p-8 max-w-5xl mx-auto w-full">
+      <div className="flex flex-col gap-6 sm:gap-8 p-4 sm:p-8 max-w-5xl mx-auto w-full">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-white text-xl font-semibold tracking-tight">Weekly Review</h1>
           <div className="flex items-center gap-2">
             <button
@@ -177,14 +177,15 @@ export default function WeeklyReviewPage() {
           <h2 className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-4">
             What got done
           </h2>
+          <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
           {loading ? (
-            <div className="grid grid-cols-7 gap-3">
+            <div className="grid grid-cols-7 gap-2 sm:gap-3 min-w-[640px] sm:min-w-0">
               {weekDays.map((_, i) => (
                 <div key={i} className="h-48 rounded-lg bg-white/5 animate-pulse" />
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-7 gap-3">
+            <div className="grid grid-cols-7 gap-2 sm:gap-3 min-w-[640px] sm:min-w-0">
               {dayData.map((day) => (
                 <div key={day.label} className="flex flex-col gap-2">
                   <div className="flex flex-col items-center gap-0.5">
@@ -218,11 +219,12 @@ export default function WeeklyReviewPage() {
               ))}
             </div>
           )}
+          </div>
         </div>
 
         {/* Charts */}
         {!loading && (
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Bar chart: daily productivity */}
             <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-5">
               <h3 className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-4">

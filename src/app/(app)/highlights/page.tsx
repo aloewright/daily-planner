@@ -95,7 +95,7 @@ export default function HighlightsPage() {
   }
 
   return (
-    <div className="flex h-full overflow-auto px-6 py-8">
+    <div className="flex h-full overflow-auto px-4 sm:px-6 py-6 sm:py-8">
       <div className="w-full max-w-[640px] mx-auto flex flex-col gap-6">
         {/* Header */}
         <div className="flex items-center justify-between">

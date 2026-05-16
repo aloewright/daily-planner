@@ -156,8 +156,8 @@ function Step1({
   }
 
   return (
-    <div className="flex gap-6">
-      <div className="flex-1">
+    <div className="flex flex-col sm:flex-row gap-6">
+      <div className="flex-1 min-w-0">
         <h2 className="text-xl font-semibold text-white mb-1">
           What&apos;s on your plate today?
         </h2>
@@ -335,9 +335,9 @@ function Step3({ tasks }: { tasks: PlanTask[] }) {
       <p className="text-sm text-white/40 mb-5">
         Here&apos;s how your tasks fit into the day.
       </p>
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         {/* Task list */}
-        <div className="w-56 flex-shrink-0">
+        <div className="w-full sm:w-56 flex-shrink-0">
           <p className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-2">
             Tasks
           </p>
@@ -662,9 +662,9 @@ export function DailyPlanningWizard() {
 
   return (
     /* Full-screen overlay */
-    <div className="fixed inset-0 z-50 bg-[#0f0f0f]/90 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-[#0f0f0f]/90 flex items-center justify-center p-2 sm:p-4">
       {/* Modal card */}
-      <div className="relative w-full max-w-3xl bg-[#141414] border border-[#2a2a2a] rounded-2xl p-8 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+      <div className="relative w-full max-w-3xl bg-[#141414] border border-[#2a2a2a] rounded-2xl p-4 sm:p-8 shadow-2xl flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
         {/* Close / X */}
         <button
           onClick={handleFinish}

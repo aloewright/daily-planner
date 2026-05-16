@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronDown, SlidersHorizontal } from 'lucide-react'
+import { ChevronDown, SlidersHorizontal, Menu } from 'lucide-react'
+import { useUIStore } from '@/store/ui'
 
 type ViewOption =
   | 'Board'
@@ -26,6 +27,7 @@ export function TopBar() {
   const [view, setView] = useState<ViewOption>('Board')
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const toggleMobileNav = useUIStore((s) => s.toggleMobileNav)
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -43,17 +45,25 @@ export function TopBar() {
   const goToToday = () => router.push('/today')
 
   return (
-    <header className="flex items-center justify-between h-12 px-4 bg-[#141414] border-b border-[--color-border] flex-shrink-0">
+    <header className="flex items-center justify-between h-12 px-3 sm:px-4 bg-[#141414] border-b border-[--color-border] flex-shrink-0 gap-2">
       {/* Left controls */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 min-w-0">
+        <button
+          type="button"
+          onClick={toggleMobileNav}
+          className="md:hidden flex items-center justify-center w-11 h-11 -ml-2 text-white/70 hover:text-white rounded-md hover:bg-[#1a1a1a] transition-colors"
+          aria-label="Open navigation"
+        >
+          <Menu size={18} strokeWidth={1.75} />
+        </button>
         <button
           onClick={goToToday}
-          className="px-3 py-1.5 text-xs font-medium text-white/70 border border-[--color-border] rounded-md hover:text-white hover:border-white/30 transition-colors duration-100"
+          className="px-3 py-1.5 min-h-[36px] text-xs font-medium text-white/70 border border-[--color-border] rounded-md hover:text-white hover:border-white/30 transition-colors duration-100"
         >
           Today
         </button>
         <button
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white/50 border border-[--color-border] rounded-md hover:text-white/70 hover:border-white/20 transition-colors duration-100"
+          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] text-xs font-medium text-white/50 border border-[--color-border] rounded-md hover:text-white/70 hover:border-white/20 transition-colors duration-100"
           aria-label="Filter"
         >
           <SlidersHorizontal size={12} strokeWidth={1.75} />
@@ -67,12 +77,12 @@ export function TopBar() {
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setDropdownOpen((o) => !o)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white/70 border border-[--color-border] rounded-md hover:text-white hover:border-white/30 transition-colors duration-100"
+            className="flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] text-xs font-medium text-white/70 border border-[--color-border] rounded-md hover:text-white hover:border-white/30 transition-colors duration-100 max-w-[140px] sm:max-w-none truncate"
             aria-haspopup="listbox"
             aria-expanded={dropdownOpen}
           >
-            {view}
-            <ChevronDown size={12} strokeWidth={2} />
+            <span className="truncate">{view}</span>
+            <ChevronDown size={12} strokeWidth={2} className="flex-shrink-0" />
           </button>
 
           {dropdownOpen && (
@@ -102,7 +112,7 @@ export function TopBar() {
         </div>
 
         {/* Calendars button */}
-        <button className="px-3 py-1.5 text-xs font-medium text-white/50 border border-[--color-border] rounded-md hover:text-white/70 hover:border-white/20 transition-colors duration-100">
+        <button className="hidden sm:inline-flex px-3 py-1.5 min-h-[36px] text-xs font-medium text-white/50 border border-[--color-border] rounded-md hover:text-white/70 hover:border-white/20 transition-colors duration-100">
           Calendars
         </button>
 

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect } from 'react'
 import {
   House,
   CheckSquare,
@@ -13,7 +14,9 @@ import {
   BookText,
   Archive,
   UserPlus,
+  X,
 } from 'lucide-react'
+import { useUIStore } from '@/store/ui'
 
 interface NavItem {
   icon: React.ElementType
@@ -37,12 +40,22 @@ const weeklyItems: NavItem[] = [
   { icon: Archive, label: 'Backlog', href: '/backlog' },
 ]
 
-function NavButton({ item, active }: { item: NavItem; active: boolean }) {
+function NavButton({
+  item,
+  active,
+  onClick,
+}: {
+  item: NavItem
+  active: boolean
+  onClick?: () => void
+}) {
   return (
     <Link
       href={item.href}
+      onClick={onClick}
       className={`
         relative flex flex-col items-center gap-0.5 w-full py-2 px-1 rounded-md
+        min-h-[44px] justify-center
         transition-colors duration-100
         ${active
           ? 'text-[--color-accent] bg-[#1f1f1f]'
@@ -71,44 +84,102 @@ function SectionLabel({ label }: { label: string }) {
 
 export function LeftSidebar() {
   const pathname = usePathname()
+  const mobileNavOpen = useUIStore((s) => s.mobileNavOpen)
+  const setMobileNavOpen = useUIStore((s) => s.setMobileNavOpen)
 
   const isActive = (href: string) => {
     if (href === '/board') return pathname === '/board' || pathname === '/'
     return pathname === href || pathname.startsWith(href + '/')
   }
 
+  // Close the mobile drawer whenever the route changes.
+  useEffect(() => {
+    setMobileNavOpen(false)
+  }, [pathname, setMobileNavOpen])
+
+  // Lock body scroll while drawer is open on mobile.
+  useEffect(() => {
+    if (!mobileNavOpen) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [mobileNavOpen])
+
+  const closeMobile = () => setMobileNavOpen(false)
+
   return (
-    <aside className="flex flex-col items-center w-[65px] h-screen bg-[#141414] border-r border-[--color-border] flex-shrink-0 overflow-hidden">
-      {/* Logo */}
-      <div className="flex items-center justify-center w-full py-4">
-        <div className="w-8 h-8 rounded-full bg-[--color-amber] flex items-center justify-center flex-shrink-0">
-          <span className="text-black text-xs font-bold leading-none">D</span>
+    <>
+      {/* Backdrop — mobile only */}
+      {mobileNavOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 md:hidden"
+          onClick={closeMobile}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`
+          flex flex-col items-center w-[65px] bg-[#141414] border-r border-[--color-border]
+          flex-shrink-0 overflow-hidden
+          fixed md:static inset-y-0 left-0 z-50 h-screen
+          transition-transform duration-200 ease-out
+          ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0
+        `}
+        aria-label="Primary navigation"
+      >
+        {/* Logo + mobile close */}
+        <div className="relative flex items-center justify-center w-full py-4">
+          <div className="w-8 h-8 rounded-full bg-[--color-amber] flex items-center justify-center flex-shrink-0">
+            <span className="text-black text-xs font-bold leading-none">D</span>
+          </div>
+          <button
+            type="button"
+            onClick={closeMobile}
+            className="absolute top-2 right-1 md:hidden w-9 h-9 flex items-center justify-center rounded-md text-white/40 hover:text-white/80 hover:bg-[#1a1a1a]"
+            aria-label="Close navigation"
+          >
+            <X size={16} strokeWidth={1.75} />
+          </button>
         </div>
-      </div>
 
-      {/* Nav */}
-      <nav className="flex flex-col items-center w-full flex-1 gap-0 px-1.5 overflow-y-auto scrollbar-none">
-        <SectionLabel label="Daily" />
-        {dailyItems.map((item) => (
-          <NavButton key={item.href} item={item} active={isActive(item.href)} />
-        ))}
+        {/* Nav */}
+        <nav className="flex flex-col items-center w-full flex-1 gap-0 px-1.5 overflow-y-auto scrollbar-none">
+          <SectionLabel label="Daily" />
+          {dailyItems.map((item) => (
+            <NavButton
+              key={item.href}
+              item={item}
+              active={isActive(item.href)}
+              onClick={closeMobile}
+            />
+          ))}
 
-        <SectionLabel label="Weekly" />
-        {weeklyItems.map((item) => (
-          <NavButton key={item.href} item={item} active={isActive(item.href)} />
-        ))}
-      </nav>
+          <SectionLabel label="Weekly" />
+          {weeklyItems.map((item) => (
+            <NavButton
+              key={item.href}
+              item={item}
+              active={isActive(item.href)}
+              onClick={closeMobile}
+            />
+          ))}
+        </nav>
 
-      {/* Bottom invite */}
-      <div className="flex flex-col items-center w-full px-1.5 pb-4">
-        <button
-          className="flex flex-col items-center gap-0.5 w-full py-2 px-1 rounded-md text-white/30 hover:text-white/60 hover:bg-[#1a1a1a] transition-colors duration-100"
-          aria-label="Invite teammates"
-        >
-          <UserPlus size={18} strokeWidth={1.75} />
-          <span className="text-[9px] leading-tight tracking-wide font-medium">Invite</span>
-        </button>
-      </div>
-    </aside>
+        {/* Bottom invite */}
+        <div className="flex flex-col items-center w-full px-1.5 pb-4">
+          <button
+            className="flex flex-col items-center gap-0.5 w-full py-2 px-1 rounded-md min-h-[44px] justify-center text-white/30 hover:text-white/60 hover:bg-[#1a1a1a] transition-colors duration-100"
+            aria-label="Invite teammates"
+          >
+            <UserPlus size={18} strokeWidth={1.75} />
+            <span className="text-[9px] leading-tight tracking-wide font-medium">Invite</span>
+          </button>
+        </div>
+      </aside>
+    </>
   )
 }

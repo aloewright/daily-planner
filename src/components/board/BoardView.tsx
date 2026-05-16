@@ -101,8 +101,8 @@ export function BoardView() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Board columns */}
-      <div className="flex gap-4 flex-1 overflow-x-auto px-6 py-6 min-h-0">
+      {/* Board columns — horizontal snap-scroll on mobile */}
+      <div className="flex gap-3 sm:gap-4 flex-1 overflow-x-auto px-4 sm:px-6 py-4 sm:py-6 min-h-0 snap-x snap-mandatory md:snap-none scroll-px-4 sm:scroll-px-6">
         {days.map((date) => (
           <DayColumn
             key={date.toISOString()}
