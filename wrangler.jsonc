@@ -10,4 +10,6 @@
   "vars": {
     "BETTER_AUTH_URL": "https://alex.coffee"
   }
+  // To enable public share links for /highlights, create an R2 bucket and add:
+  // "r2_buckets": [{ "binding": "HIGHLIGHTS_BUCKET", "bucket_name": "daily-planner-highlights" }]
 }

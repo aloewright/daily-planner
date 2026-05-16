@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { format, subDays, startOfDay, isSameDay } from 'date-fns'
-import { Feather } from 'lucide-react'
+import { Feather, Share2 } from 'lucide-react'
 import { Toggle } from '@/components/ui/Toggle'
+import { ShareModal } from '@/components/highlights/ShareModal'
 import { mapApiTaskToTask, type ApiTask } from '@/lib/mapTask'
 import type { Task } from '@/types/index'
 
@@ -25,6 +26,7 @@ export default function HighlightsPage() {
   const [groups, setGroups] = useState<DayGroup[]>([])
   const [loading, setLoading] = useState(true)
   const [savingToggle, setSavingToggle] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
 
   const today = startOfDay(new Date())
   const sevenDaysAgo = subDays(today, 7)
@@ -109,10 +111,21 @@ export default function HighlightsPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShareOpen(true)}
+              disabled={!enabled || groups.length === 0}
+              className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Share weekly highlights"
+            >
+              <Share2 size={14} strokeWidth={1.75} />
+              Share
+            </button>
             <span className="text-xs text-white/40">{savingToggle ? 'Saving…' : 'Enable'}</span>
             <Toggle checked={enabled} onChange={handleToggle} label="Enable highlights" />
           </div>
         </div>
+
+        <ShareModal open={shareOpen} onClose={() => setShareOpen(false)} />
 
         {/* Content */}
         {!enabled ? (
