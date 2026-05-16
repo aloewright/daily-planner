@@ -66,6 +66,11 @@ model Task {
   sortOrder      Int             @default(0)
   archived       Boolean         @default(false)
   recurring      String?
+  recurringEndDate          DateTime?
+  recurringLastGeneratedFor DateTime?
+  recurringParentId         String?
+  recurringParent           Task?   @relation("RecurringSeries", fields: [recurringParentId], references: [id], onDelete: SetNull)
+  recurringInstances        Task[]  @relation("RecurringSeries")
   userId         String
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   subtasks       Subtask[]
@@ -73,6 +78,8 @@ model Task {
   dailyPlanTasks DailyPlanTask[]
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+
+  @@unique([recurringParentId, startDate], name: "Task_recurringParentId_startDate_key")
 }
 
 model Subtask {

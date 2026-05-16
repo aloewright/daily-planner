@@ -1,0 +1,17 @@
+name = "daily-planner-recurring-cron"
+main = "src/index.ts"
+compatibility_date = "2026-05-15"
+
+# Runs every day at 04:00 UTC. Adjust to match the deployment's preferred time
+# window — pick a slot when traffic is low so the materialization batch doesn't
+# contend with user reads.
+[triggers]
+crons = ["0 4 * * *"]
+
+[vars]
+# The base URL of the deployed Next.js app, e.g. https://daily-planner.example.com
+# Override with `wrangler secret put APP_BASE_URL` if it should not live in git.
+APP_BASE_URL = "https://example.invalid"
+
+# Secrets (set via `wrangler secret put`):
+#   CRON_SECRET            shared with the Next.js app (same env var name there)
