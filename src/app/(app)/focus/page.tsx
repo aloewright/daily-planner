@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Play, Square, Check, ChevronDown } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Play, Square, Check, ChevronDown, LogOut } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,7 +26,19 @@ interface ApiTask {
   subtasks: ApiSubtask[]
 }
 
+interface PersistedSession {
+  mode: 'focus' | 'pomodoro'
+  focusTaskId: string | null
+  isRunning: boolean
+  snapshotSeconds: number
+  startedAt: number | null
+  pomodoroPhase: 'work' | 'break'
+  pomodoroCount: number
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const STORAGE_KEY = 'focus.session.v1'
 
 function pad(n: number): string {
   return String(n).padStart(2, '0')
@@ -45,6 +58,36 @@ function formatMinutes(m: number): string {
   return `0:${pad(min)}`
 }
 
+function readPersisted(): PersistedSession | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<PersistedSession>
+    if (parsed.mode !== 'focus' && parsed.mode !== 'pomodoro') return null
+    return {
+      mode: parsed.mode,
+      focusTaskId: typeof parsed.focusTaskId === 'string' ? parsed.focusTaskId : null,
+      isRunning: !!parsed.isRunning,
+      snapshotSeconds: typeof parsed.snapshotSeconds === 'number' ? parsed.snapshotSeconds : 0,
+      startedAt: typeof parsed.startedAt === 'number' ? parsed.startedAt : null,
+      pomodoroPhase: parsed.pomodoroPhase === 'break' ? 'break' : 'work',
+      pomodoroCount: typeof parsed.pomodoroCount === 'number' ? parsed.pomodoroCount : 0,
+    }
+  } catch {
+    return null
+  }
+}
+
+function writePersisted(state: PersistedSession): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    /* ignore quota / private mode errors */
+  }
+}
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const POMODORO_WORK_SECONDS = 25 * 60
@@ -53,6 +96,8 @@ const POMODORO_BREAK_SECONDS = 5 * 60
 // ─── FocusPage ────────────────────────────────────────────────────────────────
 
 export default function FocusPage() {
+  const router = useRouter()
+
   // Mode
   const [mode, setMode] = useState<'focus' | 'pomodoro'>('focus')
 
@@ -69,11 +114,36 @@ export default function FocusPage() {
   const [loadingTasks, setLoadingTasks] = useState(true)
   const [showDropdown, setShowDropdown] = useState(false)
 
+  // Hydration tracking — keeps initial restore from clobbering persisted state
+  const hydratedRef = useRef(false)
+
   // Derived selected task
   const focusTask = tasks.find((t) => t.id === focusTaskId) ?? null
 
   // Timer interval ref
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // ── Hydrate from localStorage on mount ────────────────────────────────────
+  useEffect(() => {
+    const s = readPersisted()
+    if (s) {
+      setMode(s.mode)
+      setFocusTaskId(s.focusTaskId)
+      setPomodoroPhase(s.pomodoroPhase)
+      setPomodoroCount(s.pomodoroCount)
+
+      let restored = s.snapshotSeconds
+      if (s.isRunning && s.startedAt != null) {
+        const elapsed = Math.max(0, Math.floor((Date.now() - s.startedAt) / 1000))
+        restored = s.mode === 'focus'
+          ? s.snapshotSeconds + elapsed
+          : Math.max(0, s.snapshotSeconds - elapsed)
+      }
+      setSeconds(restored)
+      if (s.isRunning) setIsRunning(true)
+    }
+    hydratedRef.current = true
+  }, [])
 
   // ── Fetch today's tasks ───────────────────────────────────────────────────
   useEffect(() => {
@@ -86,8 +156,9 @@ export default function FocusPage() {
       .finally(() => setLoadingTasks(false))
   }, [])
 
-  // ── Init timer seconds when mode changes or task changes ──────────────────
+  // ── Init timer seconds when mode changes (after hydration only) ───────────
   useEffect(() => {
+    if (!hydratedRef.current) return
     if (isRunning) stopTimer()
     if (mode === 'pomodoro') {
       setSeconds(POMODORO_WORK_SECONDS)
@@ -168,20 +239,67 @@ export default function FocusPage() {
     }
   }, [])
 
+  // ── Persist session state ────────────────────────────────────────────────
+  // Snapshot seconds + startedAt only change at start/stop/phase boundaries.
+  // We re-derive a fresh snapshot here whenever any persisted field changes,
+  // so a reload always reconstructs the correct elapsed time.
+  useEffect(() => {
+    if (!hydratedRef.current) return
+    const persisted: PersistedSession = {
+      mode,
+      focusTaskId,
+      isRunning,
+      // When running, snapshot is "seconds at this moment", and startedAt is now.
+      // On reload, restored seconds = snapshot ± (now - startedAt).
+      snapshotSeconds: seconds,
+      startedAt: isRunning ? Date.now() : null,
+      pomodoroPhase,
+      pomodoroCount,
+    }
+    writePersisted(persisted)
+  // We intentionally exclude `seconds` from deps: persisting on every tick is
+  // wasteful, and snapshot+startedAt reconstruct it on reload. We re-snapshot
+  // on the events that actually change the timeline (start/stop/mode/task/phase).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, focusTaskId, isRunning, pomodoroPhase, pomodoroCount])
+
+  // ── beforeunload warning while timer is running ──────────────────────────
+  useEffect(() => {
+    if (!isRunning) return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      // Required for older browsers — modern browsers show a generic prompt.
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isRunning])
+
+  // ── Commit actualTime for current focus session ──────────────────────────
+  const commitActualTime = useCallback(async (taskId: string, elapsedSeconds: number) => {
+    if (elapsedSeconds <= 0) return
+    const minutes = Math.round(elapsedSeconds / 60)
+    if (minutes <= 0) return
+    const existing = tasks.find((t) => t.id === taskId)
+    const totalMinutes = (existing?.actualTime ?? 0) + minutes
+    try {
+      await fetch(`/api/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actualTime: totalMinutes }),
+      })
+    } catch {
+      /* silently ignore */
+    }
+  }, [tasks])
+
   // ── Handle START / STOP ───────────────────────────────────────────────────
   async function handleToggle() {
     if (isRunning) {
       stopTimer()
       // For focus mode: persist actualTime to server
       if (mode === 'focus' && focusTaskId) {
-        const minutes = Math.round(seconds / 60)
-        const existingTask = focusTask
-        const totalMinutes = (existingTask?.actualTime ?? 0) + minutes
-        fetch(`/api/tasks/${focusTaskId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ actualTime: totalMinutes }),
-        }).catch(() => {/* silently ignore */})
+        await commitActualTime(focusTaskId, seconds)
       }
     } else {
       if (mode === 'focus') {
@@ -211,6 +329,31 @@ export default function FocusPage() {
       setSeconds(POMODORO_WORK_SECONDS)
       setPomodoroPhase('work')
     }
+  }
+
+  // ── Exit focus → stop timer, commit actualTime, navigate to /today ───────
+  async function handleExit() {
+    const wasRunning = isRunning
+    const elapsed = seconds
+    if (wasRunning) {
+      stopTimer()
+    }
+    if (wasRunning && mode === 'focus' && focusTaskId) {
+      await commitActualTime(focusTaskId, elapsed)
+    }
+    // Persist the selected task (so returning to /focus preserves selection),
+    // but clear the running-timer fields.
+    const persisted: PersistedSession = {
+      mode,
+      focusTaskId,
+      isRunning: false,
+      snapshotSeconds: 0,
+      startedAt: null,
+      pomodoroPhase: 'work',
+      pomodoroCount,
+    }
+    writePersisted(persisted)
+    router.push('/today')
   }
 
   // ── Timer label ───────────────────────────────────────────────────────────
@@ -256,11 +399,21 @@ export default function FocusPage() {
           </button>
         </div>
 
-        {mode === 'pomodoro' && (
-          <div className="text-xs text-white/30">
-            {pomodoroCount} session{pomodoroCount !== 1 ? 's' : ''} completed
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {mode === 'pomodoro' && (
+            <div className="text-xs text-white/30">
+              {pomodoroCount} session{pomodoroCount !== 1 ? 's' : ''} completed
+            </div>
+          )}
+          <button
+            onClick={handleExit}
+            aria-label="Exit focus"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-white/60 hover:text-white hover:bg-[#1a1a1a] transition-colors"
+          >
+            <LogOut size={13} strokeWidth={2} />
+            Exit focus
+          </button>
+        </div>
       </div>
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
