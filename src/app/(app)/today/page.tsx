@@ -192,7 +192,7 @@ export default function TodayPage() {
   }
 
   return (
-    <div className="flex h-full overflow-auto px-6 py-6">
+    <div className="flex h-full overflow-auto px-4 sm:px-6 py-4 sm:py-6">
       <div className="w-full max-w-[640px] mx-auto flex flex-col">
         {/* Header */}
         <div className="mb-6">
@@ -226,12 +226,15 @@ export default function TodayPage() {
               setShowInput(true)
               setTimeout(() => inputRef.current?.focus(), 0)
             }}
-            className="flex items-center gap-1 text-white/30 hover:text-white/60 transition-colors duration-100 text-xs"
+            className="flex items-center gap-1 text-white/30 hover:text-white/60 transition-colors duration-100 text-xs min-h-[44px] sm:min-h-0 pr-2 -ml-1 pl-1 rounded"
           >
             <Plus size={13} strokeWidth={2} />
             <span>Add task</span>
           </button>
-          <button className="text-white/20 hover:text-white/50 transition-colors duration-100" aria-label="Sort">
+          <button
+            className="text-white/20 hover:text-white/50 transition-colors duration-100 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
+            aria-label="Sort"
+          >
             <ArrowUpDown size={12} strokeWidth={1.75} />
           </button>
         </div>

@@ -109,10 +109,10 @@ export default function WeeklyPlanPage() {
 
   return (
     <div className="flex flex-col h-full bg-[#0f0f0f]">
-      <div className="flex flex-col gap-6 p-8 max-w-2xl mx-auto w-full">
+      <div className="flex flex-col gap-6 p-4 sm:p-8 max-w-2xl mx-auto w-full">
         {/* Header */}
         <div className="flex flex-col gap-1">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h1 className="text-white text-xl font-semibold tracking-tight">Weekly objectives</h1>
             {/* Date nav */}
             <div className="flex items-center gap-2">

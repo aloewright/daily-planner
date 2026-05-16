@@ -168,11 +168,11 @@ export default function AnalyticsPage() {
 
   return (
     <div className="flex flex-col h-full bg-[#0f0f0f] overflow-auto">
-      <div className="flex flex-col gap-8 p-8 max-w-5xl mx-auto w-full">
+      <div className="flex flex-col gap-6 sm:gap-8 p-4 sm:p-8 max-w-5xl mx-auto w-full">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-white text-xl font-semibold tracking-tight">Analytics</h1>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Date nav */}
             <div className="flex items-center gap-2">
               <button
@@ -230,11 +230,11 @@ export default function AnalyticsPage() {
         ) : (
           <>
             {/* Weekly Totals */}
-            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
+            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4 sm:p-6">
               <h2 className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-5">
                 Weekly Totals
               </h2>
-              <div className="flex items-center gap-8">
+              <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8">
                 {/* Big number */}
                 <div className="flex flex-col">
                   <span className="text-5xl font-bold text-white tabular-nums leading-none">
@@ -244,8 +244,9 @@ export default function AnalyticsPage() {
                 </div>
 
                 {/* Donut */}
-                <div className="flex items-center gap-6 flex-1">
-                  <ResponsiveContainer width="45%" height={160}>
+                <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 flex-1 w-full">
+                  <div className="w-full max-w-[260px] sm:max-w-[45%] flex-shrink-0">
+                  <ResponsiveContainer width="100%" height={160}>
                     <PieChart>
                       <Pie
                         data={data.byChannel}
@@ -264,7 +265,8 @@ export default function AnalyticsPage() {
                       <Tooltip content={<PieTooltip />} />
                     </PieChart>
                   </ResponsiveContainer>
-                  <div className="flex flex-col gap-2 flex-1">
+                  </div>
+                  <div className="flex flex-col gap-2 flex-1 w-full">
                     {data.byChannel.map((ch) => (
                       <div key={ch.channelId} className="flex items-center gap-2">
                         <div
@@ -286,7 +288,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Daily Breakdown */}
-            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
+            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4 sm:p-6">
               <h2 className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-5">
                 Daily Breakdown
               </h2>

@@ -511,9 +511,9 @@ export default function BacklogPage() {
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="flex h-full bg-[#0f0f0f]">
+      <div className="flex flex-col md:flex-row h-full bg-[#0f0f0f] overflow-auto md:overflow-hidden">
         {/* ── Left panel ───────────────────────────────────────────────── */}
-        <div className="flex flex-col" style={{ flex: '0 0 60%', minWidth: 0 }}>
+        <div className="flex flex-col w-full md:w-auto md:flex-[0_0_60%] min-w-0">
           {/* Filter bar */}
           <div className="flex items-center gap-2 px-5 py-3 border-b border-[#2a2a2a]">
             <button className="flex items-center gap-1.5 bg-[#4ade80]/10 text-[#4ade80] text-xs font-medium px-3 py-1.5 rounded-full border border-[#4ade80]/30 hover:bg-[#4ade80]/20 transition-colors">
@@ -572,7 +572,7 @@ export default function BacklogPage() {
         </div>
 
         {/* ── Right panel (mini calendar) ──────────────────────────────── */}
-        <div className="flex flex-col flex-1 bg-[#141414] border-l border-[#2a2a2a] min-w-0">
+        <div className="flex flex-col flex-1 bg-[#141414] border-t md:border-t-0 md:border-l border-[#2a2a2a] min-w-0">
           <div className="px-4 py-3 border-b border-[#2a2a2a]">
             <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider">
               Schedule
