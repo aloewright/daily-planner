@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { format, addWeeks, startOfWeek, endOfWeek, subWeeks } from 'date-fns'
-import { ChevronLeft, ChevronRight, Download } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Download, Flame } from 'lucide-react'
 import {
   BarChart,
   Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -14,6 +16,7 @@ import {
   Pie,
   Cell,
   Legend,
+  CartesianGrid,
 } from 'recharts'
 
 interface ChannelData {
@@ -42,11 +45,35 @@ interface CsvRow {
   actualTime: number
 }
 
+interface TrendsWeek {
+  weekStart: string
+  label: string
+  totalMinutes: number
+  plannedMinutes: number
+  byChannel: { name: string; color: string; minutes: number }[]
+}
+
+interface TrendsChannel {
+  name: string
+  color: string
+  totalMinutes: number
+}
+
+interface TrendsData {
+  anchorDate: string
+  weeks: number
+  streak: { current: number; longest: number; lookbackDays: number }
+  weekly: TrendsWeek[]
+  channels: TrendsChannel[]
+  heatmap: number[][]
+}
+
 interface AnalyticsResponse {
   totalMinutes: number
   byChannel: ChannelData[]
   byDay: DayData[]
   csvRows: CsvRow[]
+  trends?: TrendsData
 }
 
 function formatMinutes(mins: number): string {
@@ -165,6 +192,75 @@ export default function AnalyticsPage() {
   for (const ch of data?.byChannel ?? []) {
     channelColorMap.set(ch.name, ch.color)
   }
+
+  const trends = data?.trends
+  const trendsChannelNames = useMemo(
+    () => trends?.channels.map((c) => c.name) ?? [],
+    [trends]
+  )
+  const trendsChannelColors = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const c of trends?.channels ?? []) m.set(c.name, c.color)
+    return m
+  }, [trends])
+
+  const trendsLineData = useMemo(() => {
+    if (!trends) return []
+    return trends.weekly.map((wk) => {
+      const entry: Record<string, string | number> = { week: wk.label }
+      const byCh = new Map(wk.byChannel.map((c) => [c.name, c.minutes]))
+      for (const name of trendsChannelNames) {
+        entry[name] = byCh.get(name) ?? 0
+      }
+      return entry
+    })
+  }, [trends, trendsChannelNames])
+
+  const accuracyData = useMemo(() => {
+    if (!trends) return []
+    return trends.weekly.map((wk) => ({
+      week: wk.label,
+      planned: wk.plannedMinutes,
+      actual: wk.totalMinutes,
+      accuracy:
+        wk.plannedMinutes > 0
+          ? Math.round((wk.totalMinutes / wk.plannedMinutes) * 100)
+          : null,
+    }))
+  }, [trends])
+
+  const heatmapMax = useMemo(() => {
+    if (!trends) return 0
+    let m = 0
+    for (const row of trends.heatmap) for (const v of row) if (v > m) m = v
+    return m
+  }, [trends])
+
+  const dowLabels = useMemo(() => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], [])
+
+  // Most-productive day-of-week and hour-of-day summaries
+  const heatmapSummary = useMemo(() => {
+    if (!trends) return null
+    const dowTotals = trends.heatmap.map((row) => row.reduce((s, v) => s + v, 0))
+    const hourTotals = Array(24).fill(0) as number[]
+    for (let d = 0; d < 7; d++) for (let h = 0; h < 24; h++) hourTotals[h] += trends.heatmap[d][h]
+    let topDow = 0
+    dowTotals.forEach((v, i) => {
+      if (v > dowTotals[topDow]) topDow = i
+    })
+    let topHour = 0
+    hourTotals.forEach((v, i) => {
+      if (v > hourTotals[topHour]) topHour = i
+    })
+    const total = dowTotals.reduce((s, v) => s + v, 0)
+    return {
+      topDow: dowLabels[topDow],
+      topDowMinutes: dowTotals[topDow],
+      topHour,
+      topHourMinutes: hourTotals[topHour],
+      total,
+    }
+  }, [trends, dowLabels])
 
   return (
     <div className="flex flex-col h-full bg-[#0f0f0f] overflow-auto">
@@ -334,7 +430,249 @@ export default function AnalyticsPage() {
             </div>
           </>
         )}
+
+        {trends && (
+          <>
+            {/* Streak + Trends header */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
+                <div className="flex items-center gap-2 text-white/60 text-xs font-semibold uppercase tracking-widest mb-4">
+                  <Flame size={14} className="text-orange-400" />
+                  Current streak
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-5xl font-bold text-white tabular-nums leading-none">
+                    {trends.streak.current}
+                  </span>
+                  <span className="text-white/40 text-sm">
+                    day{trends.streak.current === 1 ? '' : 's'}
+                  </span>
+                </div>
+                <p className="text-white/30 text-xs mt-2">
+                  Consecutive days with ≥1 completed task
+                </p>
+              </div>
+
+              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
+                <div className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-4">
+                  Longest streak
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-5xl font-bold text-white tabular-nums leading-none">
+                    {trends.streak.longest}
+                  </span>
+                  <span className="text-white/40 text-sm">
+                    day{trends.streak.longest === 1 ? '' : 's'}
+                  </span>
+                </div>
+                <p className="text-white/30 text-xs mt-2">
+                  In the last {trends.streak.lookbackDays} days
+                </p>
+              </div>
+
+              {heatmapSummary && heatmapSummary.total > 0 ? (
+                <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
+                  <div className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-4">
+                    Peak time
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold text-white tabular-nums leading-none">
+                        {heatmapSummary.topDow}
+                      </span>
+                      <span className="text-white/40 text-xs">
+                        ({formatMinutes(heatmapSummary.topDowMinutes)})
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-2 mt-2">
+                      <span className="text-2xl font-bold text-white tabular-nums leading-none">
+                        {String(heatmapSummary.topHour).padStart(2, '0')}:00
+                      </span>
+                      <span className="text-white/40 text-xs">
+                        ({formatMinutes(heatmapSummary.topHourMinutes)})
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-white/30 text-xs mt-2">
+                    Most productive day &amp; hour
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
+                  <div className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-4">
+                    Peak time
+                  </div>
+                  <p className="text-white/30 text-xs">No data in trend window</p>
+                </div>
+              )}
+            </div>
+
+            {/* Channel time series (last 8 weeks) */}
+            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
+              <h2 className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-5">
+                Channel time series · last {trends.weeks} weeks
+              </h2>
+              {trendsChannelNames.length === 0 ? (
+                <p className="text-white/25 text-sm text-center py-8">No data</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={trendsLineData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+                    <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+                    <XAxis
+                      dataKey="week"
+                      tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(v: number) => `${Math.round(v / 60)}h`}
+                    />
+                    <Tooltip content={<BarTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.1)' }} />
+                    <Legend
+                      iconType="circle"
+                      iconSize={8}
+                      formatter={(value: string) => (
+                        <span className="text-white/50 text-xs">{value}</span>
+                      )}
+                    />
+                    {trendsChannelNames.map((name) => (
+                      <Line
+                        key={name}
+                        type="monotone"
+                        dataKey={name}
+                        stroke={trendsChannelColors.get(name) ?? '#6b7280'}
+                        strokeWidth={2}
+                        dot={{ r: 2.5 }}
+                        activeDot={{ r: 4 }}
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+
+            {/* Planned vs Actual accuracy */}
+            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
+              <h2 className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-5">
+                Planned vs actual · last {trends.weeks} weeks
+              </h2>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={accuracyData} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis
+                    dataKey="week"
+                    tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v: number) => `${Math.round(v / 60)}h`}
+                  />
+                  <Tooltip content={<AccuracyTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                  <Legend
+                    iconType="circle"
+                    iconSize={8}
+                    formatter={(value: string) => (
+                      <span className="text-white/50 text-xs">{value}</span>
+                    )}
+                  />
+                  <Bar dataKey="planned" name="Planned" fill="#3b82f6" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="actual" name="Actual" fill="#4ade80" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="mt-4 grid grid-cols-4 sm:grid-cols-8 gap-2 text-[10px]">
+                {accuracyData.map((wk) => (
+                  <div
+                    key={wk.week}
+                    className="rounded-md border border-white/5 px-2 py-1.5 text-center"
+                  >
+                    <div className="text-white/40">{wk.week}</div>
+                    <div className="text-white/80 tabular-nums">
+                      {wk.accuracy === null ? '—' : `${wk.accuracy}%`}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Heatmap: day-of-week × hour-of-day */}
+            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
+              <h2 className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-5">
+                Productivity heatmap · last {trends.weeks} weeks
+              </h2>
+              {heatmapMax === 0 ? (
+                <p className="text-white/25 text-sm text-center py-8">No data</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <div className="min-w-[640px]">
+                    <div className="grid grid-cols-[36px_repeat(24,minmax(0,1fr))] gap-[2px] mb-1">
+                      <div />
+                      {Array.from({ length: 24 }).map((_, h) => (
+                        <div
+                          key={h}
+                          className="text-[9px] text-white/30 text-center tabular-nums"
+                        >
+                          {h % 3 === 0 ? h : ''}
+                        </div>
+                      ))}
+                    </div>
+                    {dowLabels.map((dow, di) => (
+                      <div
+                        key={dow}
+                        className="grid grid-cols-[36px_repeat(24,minmax(0,1fr))] gap-[2px] mb-[2px]"
+                      >
+                        <div className="text-[10px] text-white/40 self-center">{dow}</div>
+                        {Array.from({ length: 24 }).map((_, h) => {
+                          const v = trends.heatmap[di][h]
+                          const intensity = heatmapMax > 0 ? v / heatmapMax : 0
+                          const bg =
+                            v === 0
+                              ? 'rgba(255,255,255,0.03)'
+                              : `rgba(74,222,128,${Math.max(0.1, intensity * 0.85)})`
+                          return (
+                            <div
+                              key={h}
+                              className="h-5 rounded-[2px]"
+                              style={{ backgroundColor: bg }}
+                              title={`${dow} ${String(h).padStart(2, '0')}:00 — ${formatMinutes(v)}`}
+                            />
+                          )
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
+    </div>
+  )
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function AccuracyTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null
+  const planned = payload.find((p: { dataKey: string }) => p.dataKey === 'planned')?.value ?? 0
+  const actual = payload.find((p: { dataKey: string }) => p.dataKey === 'actual')?.value ?? 0
+  const accuracy = planned > 0 ? Math.round((actual / planned) * 100) : null
+  return (
+    <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-xs text-white/80">
+      <p className="font-medium mb-1">{label}</p>
+      <p style={{ color: '#3b82f6' }}>Planned: {formatMinutes(planned)}</p>
+      <p style={{ color: '#4ade80' }}>Actual: {formatMinutes(actual)}</p>
+      {accuracy !== null && (
+        <p className="text-white/50 mt-1 pt-1 border-t border-white/10">
+          Accuracy: {accuracy}%
+        </p>
+      )}
     </div>
   )
 }
