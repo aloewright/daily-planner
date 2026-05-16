@@ -202,8 +202,8 @@ function RitualsTab({
         <div className="flex flex-col gap-2">
           {[
             { value: 'daily-encouragement', label: 'Daily encouragement' },
-            { value: 'none', label: 'None' },
-            { value: 'custom', label: 'Custom' },
+            { value: 'quiet', label: 'Quiet' },
+            { value: 'weekly-pattern', label: 'Weekly pattern' },
           ].map((opt) => (
             <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
               <div
