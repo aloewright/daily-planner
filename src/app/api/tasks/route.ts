@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { parseRule } from '@/lib/recurrence'
 
 const DEMO_USER_ID = 'cmp1m2r1l0000yz1ib341e9o5'
 
@@ -34,6 +35,15 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // By default, hide series parents from listings — only show concrete
+  // instances and one-off tasks. Pass ?includeSeriesParents=true to include them.
+  if (searchParams.get('includeSeriesParents') !== 'true') {
+    where.OR = [
+      { recurring: null },
+      { recurringParentId: { not: null } },
+    ]
+  }
+
   try {
     const tasks = await db.task.findMany({
       where,
@@ -54,10 +64,31 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, startDate, channelId, plannedTime, scheduledTime, backlogStatus } = body
+    const {
+      title,
+      startDate,
+      channelId,
+      plannedTime,
+      scheduledTime,
+      backlogStatus,
+      recurring,
+      recurringEndDate,
+    } = body
 
     if (!title?.trim()) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+    }
+
+    // Validate the recurrence rule early so bad input doesn't reach the DB.
+    if (recurring) {
+      try {
+        parseRule(recurring)
+      } catch (err) {
+        return NextResponse.json(
+          { error: `Invalid recurrence rule: ${err instanceof Error ? err.message : 'unknown'}` },
+          { status: 400 },
+        )
+      }
     }
 
     const task = await db.task.create({
@@ -69,6 +100,8 @@ export async function POST(request: NextRequest) {
         plannedTime: plannedTime ?? 0,
         scheduledTime: scheduledTime ?? null,
         backlogStatus: backlogStatus ?? null,
+        recurring: recurring ?? null,
+        recurringEndDate: recurringEndDate ? new Date(recurringEndDate) : null,
       },
       include: {
         channel: true,
