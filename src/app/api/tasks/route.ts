@@ -1,9 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 import { createAuth } from '@/lib/auth'
-import { tasks, channels, subtasks, comments } from '@/lib/schema'
+import { tasks, channels, subtasks, comments, users, userSettings } from '@/lib/schema'
 import { eq, and, gte, lte, isNotNull, asc, inArray } from 'drizzle-orm'
 import { createId } from '@paralleldrive/cuid2'
+
+type Db = ReturnType<typeof getDb>
+type SessionUser = { id: string; email: string; name?: string | null }
+
+async function ensureUserRow(db: Db, user: SessionUser) {
+  const now = toSqliteText(new Date())
+  await db.insert(users).values({
+    id: user.id,
+    email: user.email,
+    name: user.name ?? '',
+    createdAt: now,
+    updatedAt: now,
+  }).onConflictDoNothing()
+  await db.insert(userSettings).values({ userId: user.id }).onConflictDoNothing()
+}
 
 // Convert a JS Date to SQLite text format used by Prisma: "YYYY-MM-DD HH:MM:SS"
 function toSqliteText(d: Date): string {
@@ -84,6 +99,7 @@ export async function POST(request: NextRequest) {
   }
   const userId = session.user.id
   try {
+    await ensureUserRow(db, session.user as SessionUser)
     const body = await request.json() as {
       title?: string; startDate?: string; channelId?: string;
       plannedTime?: number; scheduledTime?: string; backlogStatus?: string;

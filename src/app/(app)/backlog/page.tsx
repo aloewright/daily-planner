@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo } from 'react'
+import { Menu, UnstyledButton } from '@mantine/core'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   DndContext,
@@ -429,21 +430,8 @@ export default function BacklogPage() {
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [activeTask, setActiveTask] = useState<ApiTask | null>(null)
   const [channelFilter, setChannelFilter] = useState<string>('')
-  const [channelMenuOpen, setChannelMenuOpen] = useState(false)
-  const channelMenuRef = useRef<HTMLDivElement>(null)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
-
-  useEffect(() => {
-    if (!channelMenuOpen) return
-    function onClick(e: MouseEvent) {
-      if (channelMenuRef.current && !channelMenuRef.current.contains(e.target as Node)) {
-        setChannelMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', onClick)
-    return () => document.removeEventListener('mousedown', onClick)
-  }, [channelMenuOpen])
 
   // Fetch backlog tasks
   const { data: backlogTasks = [] } = useQuery<ApiTask[]>({
@@ -533,62 +521,49 @@ export default function BacklogPage() {
             </div>
 
             {/* Channel filter dropdown */}
-            <div className="relative" ref={channelMenuRef}>
-              <button
-                onClick={() => setChannelMenuOpen((o) => !o)}
-                aria-haspopup="listbox"
-                aria-expanded={channelMenuOpen}
-                className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs transition-colors ${
-                  channelFilter
-                    ? 'text-[#4ade80] hover:bg-[#1a1a1a]'
-                    : 'text-white/40 hover:text-white/70 hover:bg-[#1a1a1a]'
-                }`}
-              >
-                <Hash size={13} />
-                <span>
-                  {channelFilter
-                    ? channels.find((c) => c.id === channelFilter)?.name ?? 'Channel'
-                    : 'Channel'}
-                </span>
-              </button>
-              {channelMenuOpen && (
-                <div className="absolute left-0 top-full mt-1 z-50 min-w-[160px] bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg shadow-xl overflow-hidden">
-                  <button
-                    onClick={() => {
-                      setChannelFilter('')
-                      setChannelMenuOpen(false)
-                    }}
-                    className={`w-full text-left px-3 py-2 text-xs transition-colors ${
-                      !channelFilter
-                        ? 'text-[#4ade80] bg-[#222]'
-                        : 'text-white/60 hover:text-white hover:bg-[#222]'
-                    }`}
-                  >
-                    All channels
-                  </button>
-                  {channels.map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => {
-                        setChannelFilter(c.id)
-                        setChannelMenuOpen(false)
-                      }}
-                      className={`w-full flex items-center gap-2 text-left px-3 py-2 text-xs transition-colors ${
-                        channelFilter === c.id
-                          ? 'text-[#4ade80] bg-[#222]'
-                          : 'text-white/60 hover:text-white hover:bg-[#222]'
-                      }`}
-                    >
+            <Menu shadow="md" position="bottom-start" width={180} withinPortal>
+              <Menu.Target>
+                <UnstyledButton
+                  aria-label="Filter by channel"
+                  className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs transition-colors ${
+                    channelFilter
+                      ? 'text-[#4ade80] hover:bg-[#1a1a1a]'
+                      : 'text-white/40 hover:text-white/70 hover:bg-[#1a1a1a]'
+                  }`}
+                >
+                  <Hash size={13} />
+                  <span>
+                    {channelFilter
+                      ? channels.find((c) => c.id === channelFilter)?.name ?? 'Channel'
+                      : 'Channel'}
+                  </span>
+                </UnstyledButton>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item
+                  onClick={() => setChannelFilter('')}
+                  color={!channelFilter ? 'accent' : undefined}
+                >
+                  All channels
+                </Menu.Item>
+                <Menu.Divider />
+                {channels.map((c) => (
+                  <Menu.Item
+                    key={c.id}
+                    onClick={() => setChannelFilter(c.id)}
+                    color={channelFilter === c.id ? 'accent' : undefined}
+                    leftSection={
                       <span
-                        className="w-2 h-2 rounded-full flex-shrink-0"
+                        className="w-2 h-2 rounded-full flex-shrink-0 inline-block"
                         style={{ backgroundColor: c.color }}
                       />
-                      {c.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+                    }
+                  >
+                    {c.name}
+                  </Menu.Item>
+                ))}
+              </Menu.Dropdown>
+            </Menu>
 
             <div className="flex-1" />
 
