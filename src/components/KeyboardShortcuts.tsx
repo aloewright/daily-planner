@@ -57,6 +57,12 @@ export function KeyboardShortcuts() {
         return
       }
 
+      // While the overlay is open, swallow other keys so shortcuts like
+      // 'a' or ⌘/Ctrl+K can't mutate state on the page behind the modal.
+      if (openRef.current) {
+        return
+      }
+
       if (isEditableTarget(e.target)) return
 
       // Resolve a pending 'g' chord first.
