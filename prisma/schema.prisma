@@ -21,6 +21,21 @@ model User {
   dailyPlans       DailyPlan[]
   comments         Comment[]
   settings         UserSettings?
+  notifications    Notification[]
+}
+
+model Notification {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind       String
+  payload    String    @default("{}")
+  dedupeKey  String
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@unique([userId, kind, dedupeKey])
+  @@index([userId, createdAt])
 }
 
 model Context {
