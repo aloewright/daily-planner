@@ -1,3 +1,4 @@
+import { startOfWeek } from 'date-fns'
 import { db } from '@/lib/db'
 
 export type NotificationKind =
@@ -144,8 +145,9 @@ export async function evaluateNotifications(userId: string, now: Date = new Date
   if (now.getDay() === wpIdx) {
     const weeklyAt = timeOfDay(now, settings?.weeklyPlanningTime ?? '09:00')
     if (weeklyAt && now >= weeklyAt) {
-      // Compute week start (the planning day) at 00:00
-      const weekStart = startOfDay(now)
+      // Align with WeeklyPlanPage, which buckets objectives by Monday start-of-week
+      // regardless of the user's configured planning day.
+      const weekStart = startOfWeek(now, { weekStartsOn: 1 })
       const objCount = await db.weeklyObjective.count({
         where: {
           userId,
@@ -170,7 +172,9 @@ export async function evaluateNotifications(userId: string, now: Date = new Date
     }
   }
 
-  // 4. Task overdue — tasks with dueDate < now, not completed, not archived
+  // 4. Task overdue — tasks with dueDate < now, not completed, not archived.
+  // No limit: emit() is idempotent via the (userId, kind, dedupeKey) unique index,
+  // so re-evaluating the full overdue set on each tick stays cheap.
   const overdueTasks = await db.task.findMany({
     where: {
       userId,
@@ -179,7 +183,6 @@ export async function evaluateNotifications(userId: string, now: Date = new Date
       dueDate: { lt: now, not: null },
     },
     select: { id: true, title: true, dueDate: true },
-    take: 50,
   })
   for (const t of overdueTasks) {
     await emit({
