@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { format, addWeeks, startOfWeek, endOfWeek, subWeeks } from 'date-fns'
 import { ChevronLeft, ChevronRight, Download } from 'lucide-react'
 import {
@@ -101,6 +101,27 @@ export default function AnalyticsPage() {
   const [includeWeekends, setIncludeWeekends] = useState(true)
   const [data, setData] = useState<AnalyticsResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [pdfBusy, setPdfBusy] = useState(false)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!menuOpen) return
+    function onClickAway(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onClickAway)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onClickAway)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [menuOpen])
 
   const weekStart = format(currentWeek, 'yyyy-MM-dd')
   const weekEnd = format(endOfWeek(currentWeek, { weekStartsOn: 1 }), 'yyyy-MM-dd')
@@ -129,7 +150,19 @@ export default function AnalyticsPage() {
   const prevWeek = () => setCurrentWeek((w) => addWeeks(w, -1))
   const nextWeek = () => setCurrentWeek((w) => addWeeks(w, 1))
 
+  function triggerDownload(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
   function downloadCsv() {
+    setMenuOpen(false)
     if (!data?.csvRows?.length) return
     const header = 'date,channel,title,plannedTime,actualTime\n'
     const rows = data.csvRows
@@ -139,12 +172,41 @@ export default function AnalyticsPage() {
       )
       .join('\n')
     const blob = new Blob([header + rows], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `analytics-${weekStart}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
+    triggerDownload(blob, `analytics-${weekStart}.csv`)
+  }
+
+  async function downloadPdf() {
+    setMenuOpen(false)
+    if (!data || pdfBusy) return
+    setPdfBusy(true)
+    try {
+      const [{ pdf }, { AnalyticsReportPdf }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('./AnalyticsReportPdf'),
+      ])
+      const blob = await pdf(
+        <AnalyticsReportPdf
+          weekLabel={formatWeekRange(currentWeek)}
+          totalMinutes={data.totalMinutes}
+          byChannel={data.byChannel.map((c) => ({
+            name: c.name,
+            color: c.color,
+            minutes: c.minutes,
+          }))}
+          byDay={data.byDay.map((d) => ({
+            date: d.date,
+            totalMinutes: d.totalMinutes,
+            byChannel: d.byChannel.map((c) => ({ name: c.name, minutes: c.minutes })),
+          }))}
+          csvRows={data.csvRows}
+        />
+      ).toBlob()
+      triggerDownload(blob, `analytics-${weekStart}.pdf`)
+    } catch (err) {
+      console.error('[downloadPdf]', err)
+    } finally {
+      setPdfBusy(false)
+    }
   }
 
   // Build stacked bar chart data — one entry per day
@@ -206,15 +268,42 @@ export default function AnalyticsPage() {
               Weekends
             </button>
 
-            {/* Download CSV */}
-            <button
-              onClick={downloadCsv}
-              disabled={!data?.csvRows?.length}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-white/15 text-white/50 hover:border-white/25 hover:text-white/70 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              <Download size={13} />
-              Download CSV
-            </button>
+            {/* Download menu */}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen((v) => !v)}
+                disabled={!data || (!data.csvRows?.length && data.totalMinutes === 0) || pdfBusy}
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-white/15 text-white/50 hover:border-white/25 hover:text-white/70 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <Download size={13} />
+                {pdfBusy ? 'Generating…' : 'Download'}
+              </button>
+              {menuOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full mt-1.5 z-10 w-40 rounded-md border border-[#2a2a2a] bg-[#1a1a1a] shadow-xl py-1"
+                >
+                  <button
+                    role="menuitem"
+                    onClick={downloadCsv}
+                    disabled={!data?.csvRows?.length}
+                    className="w-full text-left text-xs px-3 py-1.5 text-white/70 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    Download CSV
+                  </button>
+                  <button
+                    role="menuitem"
+                    onClick={downloadPdf}
+                    disabled={!data || data.totalMinutes === 0}
+                    className="w-full text-left text-xs px-3 py-1.5 text-white/70 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    Download PDF
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
