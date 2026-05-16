@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Calendar,
   Zap,
@@ -38,6 +38,14 @@ export function RightIconStrip() {
   const toggle = (id: PanelId) => {
     setActivePanel((prev) => (prev === id ? null : id))
   }
+
+  useEffect(() => {
+    function handleOpenSearch() {
+      setActivePanel('search')
+    }
+    document.addEventListener('open-search', handleOpenSearch)
+    return () => document.removeEventListener('open-search', handleOpenSearch)
+  }, [])
 
   return (
     <aside className="flex flex-col items-center w-[45px] h-screen bg-[#141414] border-l border-[--color-border] flex-shrink-0 py-3 gap-1">
