@@ -1,6 +1,6 @@
 # Daily Planner
 
-A full-stack daily planner web app inspired by Sunsama — calendar-integrated task manager with daily/weekly planning rituals, time tracking, and productivity analytics. Dark theme only.
+A full-stack daily planner web app — calendar-integrated task manager with daily/weekly planning rituals, time tracking, and productivity analytics. Dark theme only.
 
 ## Stack
 
